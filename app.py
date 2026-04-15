@@ -5,6 +5,7 @@ Flask-based web UI for the CRM
 """
 
 import sys
+import os
 sys.path.insert(0, '/Users/lobzy/.openclaw/workspace/data/crm')
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
@@ -15,7 +16,7 @@ from crm_api_v2 import (
     api_activity_create, api_activity_list,
     api_pipeline_view, api_dashboard, api_report_sales, api_reference_data
 )
-from crm_db import init_db
+from crm_db import init_db, DB_PATH
 import json
 from datetime import datetime
 
@@ -50,7 +51,6 @@ def contacts_list():
     if query:
         result = api_contact_search(query, limit=limit, offset=offset)
     else:
-        # Get all contacts via search with empty query
         result = api_contact_search('', limit=limit, offset=offset)
     
     if not result['success']:
@@ -282,6 +282,7 @@ def api_ref_data():
 # ============ MAIN ============
 
 if __name__ == '__main__':
-    print("Starting Love Pool Care CRM Web Server...")
-    print("Open http://localhost:5000 in your browser")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') != 'production'
+    print(f"Starting Love Pool Care CRM Web Server on port {port}...")
+    app.run(debug=debug, host='0.0.0.0', port=port)
