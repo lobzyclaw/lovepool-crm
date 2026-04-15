@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}{{ deal.title }} - Love Pool Care CRM{% endblock %}
+
+{% block content %}
+<div class="deal-detail">
+    <div class="page-header">
+        <div>
+            <h1>{{ deal.title }}</h1>
+            <p class="deal-meta">
+                Deal #{{ deal.id }} · Created {{ deal.created_at[:10] }} · 
+                <span class="badge" style="background: {% if deal.stage == 'won' %}#d1fae5{% elif deal.stage == 'lost' %}#fee2e2{% else %}#dbeafe{% endif %}">
+                    {{ deal.stage.replace('_', ' ').title() }}
+                </span>
+            </p>
+        </div>
+        <div class="deal-actions">
+            {% if deal.stage not in ['won', 'lost'] %}
+            <form method="post" action="{{ url_for('deal_close', deal_id=deal.id) }}" class="close-deal-form" style="display: inline;">
+                <input type="hidden" name="outcome" value="won">
+                <button type="submit" class="btn btn-primary" style="background: var(--success);">
+                    <i class="fas fa-check"></i> Mark Won
+                </button>
+            </form>
+            <button onclick="document.getElementById('lost-modal').style.display='block'" class="btn btn-secondary" style="background: var(--danger); color: white;">
+                <i class="fas fa-times"></i> Mark Lost
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-section">
+            <h2>Deal Info</h2>
+            <div class="deal-info-grid">
+                <div class="info-item">
+                    <label>Value</label>
+                    <span class="value">${{ "{:,.0f}".format(deal.value) if deal.value else '—' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Probability</label>
+                    <span>{{ deal.probability }}%</span>
+                </div>
+                <div class="info-item">
+                    <label>Expected Close</label>
+                    <span>{{ deal.expected_close_date or '—' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Assigned To</label>
+                    <span>{{ deal.assigned_to.replace('usr_', '') }}</span>
+                </div>
+            </div>
+
+            {% if deal.stage not in ['won', 'lost'] %}
+            <h3 style="margin-top: 1.5rem;">Update Stage</h3>
+            <form method="post" action="{{ url_for('deal_update_stage', deal_id=deal.id) }}" class="stage-form">
+                <select name="stage" class="stage-select" onchange="this.form.submit()">
+                    {% for stage in available_stages %}
+                    <option value="{{ stage.id }}" {% if deal.stage == stage.id %}selected{% endif %}>
+                        {{ stage.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% endif %}
+
+            {% if deal.notes %}
+            <h3 style="margin-top: 1.5rem;">Notes</h3>
+            <p>{{ deal.notes }}</p>
+            {% endif %}
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Contact</h2>
+            <div class="contact-summary">
+                <h3><a href="{{ url_for('contact_detail', contact_id=deal.contact_id) }}">
+                    {{ contact.first_name }} {{ contact.last_name }}
+                </a></h3>
+                {% if contact.company_name %}
+                <p>{{ contact.company_name }}</p>
+                {% endif %}
+                <p><i class="fas fa-phone"></i> {{ contact.phone or '—' }}</p>
+                <p><i class="fas fa-envelope"></i> {{ contact.email or '—' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>Activity Timeline</h2>
+        {% if activities %}
+        <div class="timeline">
+            {% for activity in activities %}
+            <div class="timeline-item">
+                <div class="timeline-icon">
+                    {% if activity.type == 'call' %}<i class="fas fa-phone"></i>
+                    {% elif activity.type == 'email' %}<i class="fas fa-envelope"></i>
+                    {% elif activity.type == 'site_visit' %}<i class="fas fa-home"></i>
+                    {% elif activity.type == 'proposal_sent' %}<i class="fas fa-file-alt"></i>
+                    {% else %}<i class="fas fa-comment"></i>
+                    {% endif %}
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <strong>{{ activity.type.replace('_', ' ').title() }}</strong>
+                        <span class="timeline-date">{{ activity.performed_at[:10] }}</span>
+                    </div>
+                    <p>{{ activity.notes }}</p>
+                    {% if activity.duration_minutes %}
+                    <span class="timeline-meta">{{ activity.duration_minutes }} min</span>
+                    {% endif %}
+                    {% if activity.outcome %}
+                    <span class="timeline-meta">{{ activity.outcome }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>No activities yet.</p>
+        {% endif %}
+
+        <button class="btn btn-secondary activity-toggle" style="margin-top: 1rem;">
+            <i class="fas fa-plus"></i> Log Activity
+        </button>
+
+        <form method="post" action="/api/activities" class="activity-form hidden" style="margin-top: 1rem;">
+            <input type="hidden" name="contact_id" value="{{ deal.contact_id }}">
+            <input type="hidden" name="deal_id" value="{{ deal.id }}">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Type</label>
+                    <select name="type" required>
+                        <option value="call">Call</option>
+                        <option value="email">Email</option>
+                        <option value="site_visit">Site Visit</option>
+                        <option value="proposal_sent">Proposal Sent</option>
+                        <option value="note">Note</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Duration (min)</label>
+                    <input type="number" name="duration_minutes" placeholder="15">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea name="notes" rows="3" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="follow_up_required" value="1">
+                    Follow-up required
+                </label>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Log Activity</button>
+        </form>
+    </div>
+</div>
+
+<!-- Lost Deal Modal -->
+<div id="lost-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="background: white; max-width: 500px; margin: 100px auto; padding: 2rem; border-radius: 8px;">
+        <h2>Mark Deal as Lost</h2>
+        <form method="post" action="{{ url_for('deal_close', deal_id=deal.id) }}">
+            <input type="hidden" name="outcome" value="lost">
+            
+            <div class="form-group">
+                <label>Reason</label>
+                <select name="lost_reason" required>
+                    <option value="">— Select —</option>
+                    <option value="price">Price too high</option>
+                    <option value="timing">Bad timing</option>
+                    <option value="competitor">Went with competitor</option>
+                    <option value="no_response">No response</option>
+                    <option value="scope">Scope mismatch</option>
+                    <option value="financing">Financing fell through</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Details</label>
+                <textarea name="lost_detail" rows="3"></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" style="background: var(--danger);">Mark Lost</button>
+                <button type="button" onclick="document.getElementById('lost-modal').style.display='none'" class="btn btn-secondary">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

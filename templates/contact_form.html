@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}New Contact - Love Pool Care CRM{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <div class="page-header">
+        <h1>New Contact</h1>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error">
+        <ul>
+            {% for e in error %}
+            <li>{{ e }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" class="contact-form">
+        <div class="form-section">
+            <h2>Basic Information</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first_name">First Name *</label>
+                    <input type="text" id="first_name" name="first_name" value="{{ data.first_name if data else '' }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="last_name">Last Name *</label>
+                    <input type="text" id="last_name" name="last_name" value="{{ data.last_name if data else '' }}" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="company_name">Company Name</label>
+                <input type="text" id="company_name" name="company_name" value="{{ data.company_name if data else '' }}">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Contact Information</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone" name="phone" value="{{ data.phone if data else '' }}" placeholder="480-555-0100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ data.email if data else '' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="address_street">Street Address</label>
+                <input type="text" id="address_street" name="address_street" value="{{ data.address_street if data else '' }}">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="address_city">City</label>
+                    <input type="text" id="address_city" name="address_city" value="{{ data.address_city if data else '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="address_state">State</label>
+                    <input type="text" id="address_state" name="address_state" value="{{ data.address_state if data else 'AZ' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="address_zip">ZIP</label>
+                    <input type="text" id="address_zip" name="address_zip" value="{{ data.address_zip if data else '' }}">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Lead Information</h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="source">Source</label>
+                    <select id="source" name="source">
+                        <option value="">— Select —</option>
+                        {% for source in sources %}
+                        <option value="{{ source.id }}" {% if data and data.source == source.id %}selected{% endif %}>
+                            {{ source.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="assigned_to">Assigned To</label>
+                    <select id="assigned_to" name="assigned_to">
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if (data and data.assigned_to == user.id) or (not data and user.id == 'usr_rep_1') %}selected{% endif %}>
+                            {{ user.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pool_type">Pool Type</label>
+                    <select id="pool_type" name="pool_type">
+                        <option value="">— Select —</option>
+                        <option value="gunite" {% if data and data.pool_type == 'gunite' %}selected{% endif %}>Gunite</option>
+                        <option value="pebble_tec" {% if data and data.pool_type == 'pebble_tec' %}selected{% endif %}>Pebble Tec</option>
+                        <option value="plaster" {% if data and data.pool_type == 'plaster' %}selected{% endif %}>Plaster</option>
+                        <option value="vinyl" {% if data and data.pool_type == 'vinyl' %}selected{% endif %}>Vinyl</option>
+                        <option value="fiberglass" {% if data and data.pool_type == 'fiberglass' %}selected{% endif %}>Fiberglass</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="pool_size">Pool Size</label>
+                    <select id="pool_size" name="pool_size">
+                        <option value="">— Select —</option>
+                        <option value="small" {% if data and data.pool_size == 'small' %}selected{% endif %}>Small</option>
+                        <option value="medium" {% if data and data.pool_size == 'medium' %}selected{% endif %}>Medium</option>
+                        <option value="large" {% if data and data.pool_size == 'large' %}selected{% endif %}>Large</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="budget_range">Budget Range</label>
+                    <input type="text" id="budget_range" name="budget_range" value="{{ data.budget_range if data else '' }}" placeholder="e.g., 15000-25000">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" name="notes" rows="4">{{ data.notes if data else '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Contact</button>
+            <a href="{{ url_for('contacts_list') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

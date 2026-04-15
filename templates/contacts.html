@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Contacts - Love Pool Care CRM{% endblock %}
+
+{% block content %}
+<div class="contacts-page">
+    <div class="page-header">
+        <h1>Contacts</h1>
+        <a href="{{ url_for('contact_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Contact
+        </a>
+    </div>
+
+    <div class="search-bar">
+        <form method="get" action="{{ url_for('contacts_list') }}">
+            <input type="text" name="q" value="{{ query }}" placeholder="Search contacts..." class="search-input">
+            <button type="submit" class="btn btn-secondary">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
+
+    <div class="contacts-table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Company</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Location</th>
+                    <th>Assigned</th>
+                    <th>Deals</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contact in contacts %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('contact_detail', contact_id=contact.id) }}">
+                            <strong>{{ contact.first_name }} {{ contact.last_name }}</strong>
+                        </a>
+                    </td>
+                    <td>{{ contact.company_name or '—' }}</td>
+                    <td>{{ contact.phone or '—' }}</td>
+                    <td>{{ contact.email or '—' }}</td>
+                    <td>{{ contact.address_city or '—' }}</td>
+                    <td>{{ contact.assigned_to.replace('usr_', '') }}</td>
+                    <td>
+                        {% set custom_fields = contact.custom_fields|from_json if contact.custom_fields else {} %}
+                        <span class="badge">{{ custom_fields.pool_type or '—' }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if total > limit %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('contacts_list', q=query, page=page-1) }}" class="btn btn-secondary">← Previous</a>
+        {% endif %}
+        
+        <span class="page-info">Page {{ page }} of {{ (total / limit)|ceil|int }}</span>
+        
+        {% if page * limit < total %}
+        <a href="{{ url_for('contacts_list', q=query, page=page+1) }}" class="btn btn-secondary">Next →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="results-info">
+        Showing {{ contacts|length }} of {{ total }} contacts
+    </div>
+</div>
+{% endblock %}

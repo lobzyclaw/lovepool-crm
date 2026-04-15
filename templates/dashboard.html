@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h1>Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-users"></i></div>
+            <div class="stat-value">{{ data.stats.contacts.total }}</div>
+            <div class="stat-label">Total Contacts</div>
+            <div class="stat-change">+{{ data.stats.contacts.new }} new (30d)</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-handshake"></i></div>
+            <div class="stat-value">{{ data.stats.deals.open }}</div>
+            <div class="stat-label">Open Deals</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="stat-value">${{ "{:,.0f}".format(data.stats.deals.pipeline_value) }}</div>
+            <div class="stat-label">Pipeline Value</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+            <div class="stat-value">${{ "{:,.0f}".format(data.stats.deals.value_won) }}</div>
+            <div class="stat-label">Won (30d)</div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-section">
+            <h2>By Business Line</h2>
+            <div class="business-lines">
+                {% for line, stats in data.stats.by_line.items() %}
+                <div class="line-card">
+                    <h3>{{ line.title() }}</h3>
+                    <div class="line-stats">
+                        <span class="stat open">{{ stats.open }} open</span>
+                        <span class="stat won">{{ stats.won }} won</span>
+                        <span class="stat lost">{{ stats.lost }} lost</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Pipeline Quick Links</h2>
+            <div class="pipeline-links">
+                <a href="{{ url_for('pipeline_view', pipeline_id='service') }}" class="pipeline-btn">
+                    <i class="fas fa-tools"></i>
+                    <span>Service Pipeline</span>
+                </a>
+                <a href="{{ url_for('pipeline_view', pipeline_id='repair') }}" class="pipeline-btn">
+                    <i class="fas fa-wrench"></i>
+                    <span>Repair Pipeline</span>
+                </a>
+                <a href="{{ url_for('pipeline_view', pipeline_id='remodel') }}" class="pipeline-btn">
+                    <i class="fas fa-hammer"></i>
+                    <span>Remodel Pipeline</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if data.stale_deals %}
+    <div class="dashboard-section alert">
+        <h2><i class="fas fa-exclamation-triangle"></i> Stale Deals (14+ days no activity)</h2>
+        <div class="stale-deals">
+            {% for deal in data.stale_deals %}
+            <div class="stale-deal-card">
+                <a href="{{ url_for('deal_detail', deal_id=deal.id) }}">
+                    <strong>{{ deal._contact_name }}</strong>
+                    <span>{{ deal.title[:50] }}...</span>
+                    <span class="badge warning">{{ deal._stale_days }} days stale</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if data.follow_ups %}
+    <div class="dashboard-section">
+        <h2><i class="fas fa-clock"></i> Follow-ups Due</h2>
+        <div class="follow-ups">
+            {% for fu in data.follow_ups %}
+            <div class="follow-up-card">
+                <a href="{{ url_for('deal_detail', deal_id=fu.deal_id) }}">
+                    <strong>{{ fu.contact_name }}</strong>
+                    <span>{{ fu.action.type.replace('_', ' ').title() }}</span>
+                    <span class="badge danger">Due</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="quick-actions">
+        <a href="{{ url_for('contact_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Contact
+        </a>
+        <a href="{{ url_for('deal_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Deal
+        </a>
+    </div>
+</div>
+{% endblock %}
