@@ -17,13 +17,9 @@ ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 ENV DATA_DIR=/app/data
-ENV PORT=5000
 
-# Make start script executable
-RUN chmod +x start.sh
-
-# Expose port
+# Expose port (Railway will override with $PORT)
 EXPOSE 5000
 
-# Run with startup script
-CMD ["./start.sh"]
+# Run gunicorn directly
+CMD gunicorn -w 4 -b 0.0.0.0:${PORT:-5000} --timeout 120 app:app
