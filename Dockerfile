@@ -17,6 +17,7 @@ ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 ENV DATA_DIR=/app/data
+ENV PORT=5000
 
 # Make start script executable
 RUN chmod +x start.sh
