@@ -18,8 +18,7 @@ ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 ENV DATA_DIR=/app/data
 
-# Expose port (Railway will override with $PORT)
+# Expose port
 EXPOSE 5000
 
-# Run gunicorn directly
-CMD gunicorn -w 4 -b 0.0.0.0:${PORT:-5000} --timeout 120 app:app
+# No CMD - Railway will use startCommand from railway.json
