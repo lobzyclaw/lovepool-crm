@@ -21,4 +21,5 @@ ENV DATA_DIR=/app/data
 # Expose port
 EXPOSE 5000
 
-# No CMD - Railway will use startCommand from railway.json
+# Use shell form to properly expand $PORT
+CMD gunicorn -w 4 -b 0.0.0.0:${PORT} --timeout 120 app:app
