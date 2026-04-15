@@ -18,8 +18,11 @@ ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 ENV DATA_DIR=/app/data
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Expose port
 EXPOSE 5000
 
-# Run with gunicorn
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "--timeout", "120", "app:app"]
+# Run with startup script
+CMD ["./start.sh"]
