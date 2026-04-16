@@ -9,11 +9,24 @@ import subprocess
 # Debug
 print("Starting CRM...")
 print(f"Current directory: {os.getcwd()}")
-print(f"Files: {os.listdir('.')}")
 
-# Get port
-port = os.environ.get('PORT', '5000')
-print(f"PORT env var: {port}")
+# Railway always sets PORT, but let's check all vars
+for key, value in sorted(os.environ.items()):
+    print(f"  {key}={value}")
+
+# Try to get port - Railway should set this
+port = os.environ.get('PORT')
+if port:
+    try:
+        int(port)
+        print(f"Using PORT from env: {port}")
+    except ValueError:
+        print(f"PORT is not a number: {port!r}")
+        print("Falling back to default 5000")
+        port = '5000'
+else:
+    print("PORT not set, using default 5000")
+    port = '5000'
 
 # Build gunicorn command
 cmd = [
@@ -26,7 +39,7 @@ cmd = [
     'app:app'
 ]
 
-print(f"Running: {' '.join(cmd)}")
+print(f"Running: {cmd}")
 sys.stdout.flush()
 
 # Run gunicorn
