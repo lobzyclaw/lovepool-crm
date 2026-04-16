@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS
+from flask_login import login_required, current_user
 from crm_api_v2 import (
     api_contact_create, api_contact_get, api_contact_search, api_contact_update,
     api_deal_create, api_deal_get, api_deal_update_stage, api_deal_close, api_deal_list,
@@ -17,6 +18,7 @@ from crm_api_v2 import (
     api_pipeline_view, api_dashboard, api_report_sales, api_reference_data
 )
 from crm_db import init_db
+from auth import init_auth, is_public_route
 import json
 from datetime import datetime
 
@@ -27,11 +29,19 @@ app = Flask(__name__,
     template_folder='templates',
     static_folder='static'
 )
+
+# Secret key for sessions (required for Flask-Login)
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
 CORS(app)
+
+# Initialize authentication
+init_auth(app)
 
 # ============ ROUTES ============
 
 @app.route('/')
+@login_required
 def dashboard():
     """Main dashboard"""
     result = api_dashboard()
@@ -41,6 +51,7 @@ def dashboard():
     return render_template('dashboard.html', data=result)
 
 @app.route('/contacts')
+@login_required
 def contacts_list():
     """Contacts list page"""
     query = request.args.get('q', '')
@@ -64,6 +75,7 @@ def contacts_list():
                          query=query)
 
 @app.route('/contacts/new', methods=['GET', 'POST'])
+@login_required
 def contact_new():
     """Create new contact"""
     if request.method == 'POST':
@@ -89,7 +101,7 @@ def contact_new():
             }
         }
         
-        result = api_contact_create(data, created_by='usr_rep_1')
+        result = api_contact_create(data, created_by=current_user.get_id())
         if result['success']:
             return redirect(url_for('contact_detail', contact_id=result['contact']['id']))
         else:
@@ -106,6 +118,7 @@ def contact_new():
                          users=ref.get('users', []))
 
 @app.route('/contacts/<contact_id>')
+@login_required
 def contact_detail(contact_id):
     """Contact detail page"""
     result = api_contact_get(contact_id, include_activities=True)
@@ -118,6 +131,7 @@ def contact_detail(contact_id):
                          activities=result.get('activities', []))
 
 @app.route('/deals')
+@login_required
 def deals_list():
     """Deals list page"""
     pipeline = request.args.get('pipeline')
@@ -149,6 +163,7 @@ def deals_list():
                          users=ref.get('users', []))
 
 @app.route('/deals/new', methods=['GET', 'POST'])
+@login_required
 def deal_new():
     """Create new opportunity"""
     contact_id = request.args.get('contact_id')
@@ -169,7 +184,7 @@ def deal_new():
                 'notes': request.form.get('notes')
             }
             
-            result = api_deal_create(data, created_by='usr_rep_1')
+            result = api_deal_create(data, created_by=current_user.get_id())
             if result['success']:
                 return redirect(url_for('deal_detail', deal_id=result['deal']['id']))
             else:
@@ -200,6 +215,7 @@ def deal_new():
                          contact_id=contact_id)
 
 @app.route('/deals/<deal_id>')
+@login_required
 def deal_detail(deal_id):
     """Deal detail page"""
     result = api_deal_get(deal_id)
@@ -214,10 +230,11 @@ def deal_detail(deal_id):
                          history=result.get('history', []))
 
 @app.route('/deals/<deal_id>/update_stage', methods=['POST'])
+@login_required
 def deal_update_stage(deal_id):
     """Update deal stage"""
     new_stage = request.form.get('stage')
-    result = api_deal_update_stage(deal_id, new_stage, updated_by='usr_rep_1')
+    result = api_deal_update_stage(deal_id, new_stage, updated_by=current_user.get_id())
     
     if request.is_json:
         return jsonify(result)
@@ -228,13 +245,14 @@ def deal_update_stage(deal_id):
         return render_template('error.html', error=result.get('errors', ['Unknown error']))
 
 @app.route('/deals/<deal_id>/close', methods=['POST'])
+@login_required
 def deal_close(deal_id):
     """Close deal"""
     outcome = request.form.get('outcome')
     lost_reason = request.form.get('lost_reason') if outcome == 'lost' else None
     lost_detail = request.form.get('lost_detail', '') if outcome == 'lost' else ''
     
-    result = api_deal_close(deal_id, outcome, lost_reason, lost_detail, updated_by='usr_rep_1')
+    result = api_deal_close(deal_id, outcome, lost_reason, lost_detail, updated_by=current_user.get_id())
     
     if request.is_json:
         return jsonify(result)
@@ -245,6 +263,7 @@ def deal_close(deal_id):
         return render_template('error.html', error=result.get('errors', ['Unknown error']))
 
 @app.route('/pipelines/<pipeline_id>')
+@login_required
 def pipeline_view(pipeline_id):
     """Pipeline kanban view"""
     result = api_pipeline_view(pipeline_id)
@@ -256,6 +275,7 @@ def pipeline_view(pipeline_id):
                          columns=result.get('columns', []))
 
 @app.route('/reports/sales')
+@login_required
 def sales_report():
     """Sales report page"""
     days = int(request.args.get('days', 30))
@@ -276,6 +296,7 @@ def sales_report():
 # ============ API ROUTES (for AJAX) ============
 
 @app.route('/api/contacts/search')
+@login_required
 def api_contacts_search():
     """API: Search contacts"""
     query = request.args.get('q', '')
@@ -284,30 +305,34 @@ def api_contacts_search():
     return jsonify(result)
 
 @app.route('/api/activities', methods=['POST'])
+@login_required
 def api_activity_add():
     """API: Add activity"""
     data = request.get_json()
-    result = api_activity_create(data, created_by='usr_rep_1')
+    result = api_activity_create(data, created_by=current_user.get_id())
     return jsonify(result)
 
 @app.route('/api/reference')
+@login_required
 def api_ref_data():
     """API: Get reference data"""
     result = api_reference_data()
     return jsonify(result)
 
-# ============ MAIN ============
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') == 'development'
-    app.run(debug=debug, host='0.0.0.0', port=port)
 # ============ CALLRAIL INTEGRATION ============
 
 @app.route('/webhooks/callrail', methods=['POST'])
 def callrail_webhook():
-    """Receive CallRail webhooks"""
+    """Receive CallRail webhooks - PUBLIC route with secret auth"""
     from callrail_integration import handle_callrail_webhook
+    
+    # Check webhook secret
+    webhook_secret = os.environ.get('CALLRAIL_WEBHOOK_SECRET')
+    if webhook_secret:
+        # Check query param or header
+        provided_secret = request.args.get('secret') or request.headers.get('X-Webhook-Secret')
+        if provided_secret != webhook_secret:
+            return jsonify({'success': False, 'error': 'Invalid secret'}), 403
     
     payload = request.get_json()
     result = handle_callrail_webhook(payload)
@@ -317,6 +342,7 @@ def callrail_webhook():
 # ============ CALLRAIL API SYNC ============
 
 @app.route('/admin/sync-callrail', methods=['POST'])
+@login_required
 def sync_callrail():
     """Manually trigger CallRail sync"""
     from callrail_api import sync_callrail_data
@@ -327,6 +353,7 @@ def sync_callrail():
     return jsonify(result)
 
 @app.route('/admin/sync-callrail/status')
+@login_required
 def sync_callrail_status():
     """Check if CallRail API is configured"""
     import os
@@ -343,6 +370,7 @@ def sync_callrail_status():
 # ============ DELETE ROUTES ============
 
 @app.route('/contacts/<contact_id>/delete', methods=['POST'])
+@login_required
 def contact_delete(contact_id):
     """Delete contact"""
     from crm_api_v2 import api_contact_delete
@@ -357,6 +385,7 @@ def contact_delete(contact_id):
         return render_template('error.html', error=result.get('errors', ['Unknown error']))
 
 @app.route('/deals/<deal_id>/delete', methods=['POST'])
+@login_required
 def deal_delete(deal_id):
     """Delete deal"""
     from crm_api_v2 import api_deal_delete
@@ -373,6 +402,7 @@ def deal_delete(deal_id):
 # ============ BUSINESS LINE UPDATE ============
 
 @app.route('/deals/<deal_id>/update_business_line', methods=['POST'])
+@login_required
 def deal_update_business_line(deal_id):
     """Update deal business line"""
     from crm_db import get_db
@@ -400,9 +430,10 @@ def deal_update_business_line(deal_id):
     
     return redirect(url_for('deal_detail', deal_id=deal_id))
 
-# ============ MIGRATION ROUTE ============
+# ============ MIGRATION ROUTES ============
 
 @app.route('/admin/migrate-stages', methods=['POST'])
+@login_required
 def migrate_stages():
     """Run migration to fix pipeline stages"""
     from migrate_stages import migrate
@@ -413,6 +444,7 @@ def migrate_stages():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/admin/fix-pipelines', methods=['POST'])
+@login_required
 def fix_pipelines_route():
     """Fix pipeline stages"""
     from fix_pipelines import fix_pipelines
@@ -422,3 +454,10 @@ def fix_pipelines_route():
     except Exception as e:
         import traceback
         return jsonify({'success': False, 'error': str(e), 'traceback': traceback.format_exc()}), 500
+
+# ============ MAIN ============
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_ENV') == 'development'
+    app.run(debug=debug, host='0.0.0.0', port=port)
