@@ -302,3 +302,14 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     app.run(debug=debug, host='0.0.0.0', port=port)
+# ============ CALLRAIL INTEGRATION ============
+
+@app.route('/webhooks/callrail', methods=['POST'])
+def callrail_webhook():
+    """Receive CallRail webhooks"""
+    from callrail_integration import handle_callrail_webhook
+    
+    payload = request.get_json()
+    result = handle_callrail_webhook(payload)
+    
+    return jsonify(result), 200 if result['success'] else 400
