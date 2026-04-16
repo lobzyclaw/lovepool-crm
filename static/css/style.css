@@ -758,20 +758,6 @@ body {
     align-items: center;
     justify-content: center;
     color: var(--primary);
-    font-size: 1.25rem;
-}
-
-.line-stats .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--gray-800);
-    margin-top: 0.5rem;
-}
-
-.line-stats .stat-label {
-    color: var(--gray-600);
-    font-size: 0.875rem;
-}
 
 /* Ensure line stats cards match top cards exactly */
 #lineStatsContainer .stat-card {
@@ -780,7 +766,7 @@ body {
     padding: 1.5rem;
     box-shadow: var(--shadow);
     position: relative;
-    min-height: 120px;
+    min-height: 100px;
 }
 
 #lineStatsContainer .stat-icon {
@@ -807,26 +793,5 @@ body {
 
 #lineStatsContainer .stat-label {
     color: var(--gray-600);
-    font-size: 0.875rem;
-}
-
-/* Ensure line stats cards match top card height */
-#lineStatsContainer .stat-card {
-    padding: 1.5rem;
-    min-height: auto;
-}
-
-#lineStatsContainer .stat-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 1.25rem;
-}
-
-#lineStatsContainer .stat-value {
-    font-size: 2rem;
-    margin-top: 0.5rem;
-}
-
-#lineStatsContainer .stat-label {
     font-size: 0.875rem;
 }
