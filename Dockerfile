@@ -19,4 +19,4 @@ ENV PYTHONUNBUFFERED=1 \
     DATA_DIR=/app/data
 
 # Start with gunicorn - shell form so ${PORT} expands correctly
-CMD python -c "from sample_data import add_sample_data; add_sample_data()" 2>/dev/null || true; gunicorn -w 4 -b "0.0.0.0:${PORT:-5000}" --timeout 120 --access-logfile - --error-logfile - app:app
+CMD gunicorn -w 4 -b "0.0.0.0:${PORT:-5000}" --timeout 120 --access-logfile - --error-logfile - app:app
