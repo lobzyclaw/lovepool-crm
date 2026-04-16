@@ -40,13 +40,27 @@ def get_db():
         conn.execute("PRAGMA foreign_keys = ON")
         return conn
 
+def _execute_safe(cursor, sql, params=None):
+    """Execute SQL safely, ignoring duplicate errors"""
+    try:
+        if params:
+            cursor.execute(sql, params)
+        else:
+            cursor.execute(sql)
+        return True
+    except Exception as e:
+        error_str = str(e).lower()
+        if 'already exists' in error_str or 'duplicate' in error_str:
+            return True  # Table/index already exists, that's fine
+        raise
+
 def init_db():
     """Initialize database schema"""
     conn = get_db()
     cursor = conn.cursor()
     
     # Contacts table
-    cursor.execute("""
+    _execute_safe(cursor, """
         CREATE TABLE IF NOT EXISTS contacts (
             id TEXT PRIMARY KEY,
             first_name TEXT NOT NULL,
@@ -74,13 +88,13 @@ def init_db():
     """)
     
     # Create indexes for contacts
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_contacts_phone ON contacts(phone)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_contacts_email ON contacts(email)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_contacts_assigned ON contacts(assigned_to)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(first_name, last_name)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_contacts_phone ON contacts(phone)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_contacts_email ON contacts(email)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_contacts_assigned ON contacts(assigned_to)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_contacts_name ON contacts(first_name, last_name)")
     
     # Deals table
-    cursor.execute("""
+    _execute_safe(cursor, """
         CREATE TABLE IF NOT EXISTS deals (
             id TEXT PRIMARY KEY,
             contact_id TEXT NOT NULL,
@@ -109,13 +123,13 @@ def init_db():
     """)
     
     # Create indexes for deals
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_deals_contact ON deals(contact_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(stage)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_deals_pipeline ON deals(pipeline_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_deals_assigned ON deals(assigned_to)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_deals_contact ON deals(contact_id)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_deals_stage ON deals(stage)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_deals_pipeline ON deals(pipeline_id)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_deals_assigned ON deals(assigned_to)")
     
     # Activities table
-    cursor.execute("""
+    _execute_safe(cursor, """
         CREATE TABLE IF NOT EXISTS activities (
             id TEXT PRIMARY KEY,
             type TEXT NOT NULL,
@@ -138,11 +152,11 @@ def init_db():
         )
     """)
     
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_activities_contact ON activities(contact_id)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_activities_deal ON activities(deal_id)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_activities_contact ON activities(contact_id)")
+    _execute_safe(cursor, "CREATE INDEX IF NOT EXISTS idx_activities_deal ON activities(deal_id)")
     
     # Deal history table
-    cursor.execute("""
+    _execute_safe(cursor, """
         CREATE TABLE IF NOT EXISTS deal_history (
             id SERIAL PRIMARY KEY,
             deal_id TEXT NOT NULL,
@@ -157,7 +171,7 @@ def init_db():
     """)
     
     # Users table
-    cursor.execute("""
+    _execute_safe(cursor, """
         CREATE TABLE IF NOT EXISTS users (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -168,7 +182,7 @@ def init_db():
     """)
     
     # Pipeline stages table
-    cursor.execute("""
+    _execute_safe(cursor, """
         CREATE TABLE IF NOT EXISTS pipeline_stages (
             pipeline_id TEXT NOT NULL,
             stage TEXT NOT NULL,
@@ -179,53 +193,59 @@ def init_db():
         )
     """)
     
-    # Insert default users
-    cursor.execute("SELECT COUNT(*) FROM users")
-    if cursor.fetchone()[0] == 0:
-        default_users = [
-            ("usr_rep_1", "Rep 1", None, "sales", 1),
-            ("usr_rep_2", "Rep 2", None, "sales", 1),
-            ("usr_rep_3", "Rep 3", None, "sales", 1),
-            ("usr_scott_dance", "Scott Dance", None, "admin", 1),
-        ]
-        cursor.executemany(
-            "INSERT INTO users (id, name, email, role, active) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (id) DO NOTHING",
-            default_users
-        )
+    # Insert default users (only if table is empty)
+    try:
+        cursor.execute("SELECT COUNT(*) FROM users")
+        if cursor.fetchone()[0] == 0:
+            default_users = [
+                ("usr_rep_1", "Rep 1", None, "sales", 1),
+                ("usr_rep_2", "Rep 2", None, "sales", 1),
+                ("usr_rep_3", "Rep 3", None, "sales", 1),
+                ("usr_scott_dance", "Scott Dance", None, "admin", 1),
+            ]
+            cursor.executemany(
+                "INSERT INTO users (id, name, email, role, active) VALUES (%s, %s, %s, %s, %s) ON CONFLICT (id) DO NOTHING",
+                default_users
+            )
+    except:
+        pass  # Users already exist
     
-    # Insert pipeline stages
-    cursor.execute("SELECT COUNT(*) FROM pipeline_stages")
-    if cursor.fetchone()[0] == 0:
-        stages = [
-            ("service", "new", "New Lead", 10, 1),
-            ("service", "qualified", "Qualified", 30, 2),
-            ("service", "appointment_set", "Appointment Set", 50, 3),
-            ("service", "appointment_occurred", "Appointment Occurred", 70, 4),
-            ("service", "estimate_sent", "Estimate Sent", 80, 5),
-            ("service", "followed_up", "Followed Up", 85, 6),
-            ("service", "won", "Closed Won", 100, 7),
-            ("service", "lost", "Closed Lost", 0, 8),
-            ("repair", "new", "New Lead", 10, 1),
-            ("repair", "qualified", "Qualified", 30, 2),
-            ("repair", "appointment_set", "Appointment Set", 50, 3),
-            ("repair", "appointment_occurred", "Appointment Occurred", 70, 4),
-            ("repair", "estimate_sent", "Estimate Sent", 80, 5),
-            ("repair", "followed_up", "Followed Up", 85, 6),
-            ("repair", "won", "Closed Won", 100, 7),
-            ("repair", "lost", "Closed Lost", 0, 8),
-            ("remodel", "new", "New Lead", 10, 1),
-            ("remodel", "contacted", "Contacted", 25, 2),
-            ("remodel", "qualified", "Qualified", 40, 3),
-            ("remodel", "design", "Design/Consultation", 60, 4),
-            ("remodel", "proposal", "Proposal Sent", 75, 5),
-            ("remodel", "negotiation", "Negotiation", 90, 6),
-            ("remodel", "won", "Closed Won", 100, 7),
-            ("remodel", "lost", "Closed Lost", 0, 8),
-        ]
-        cursor.executemany(
-            "INSERT INTO pipeline_stages VALUES (%s, %s, %s, %s, %s) ON CONFLICT (pipeline_id, stage) DO NOTHING",
-            stages
-        )
+    # Insert pipeline stages (only if table is empty)
+    try:
+        cursor.execute("SELECT COUNT(*) FROM pipeline_stages")
+        if cursor.fetchone()[0] == 0:
+            stages = [
+                ("service", "new", "New Lead", 10, 1),
+                ("service", "qualified", "Qualified", 30, 2),
+                ("service", "appointment_set", "Appointment Set", 50, 3),
+                ("service", "appointment_occurred", "Appointment Occurred", 70, 4),
+                ("service", "estimate_sent", "Estimate Sent", 80, 5),
+                ("service", "followed_up", "Followed Up", 85, 6),
+                ("service", "won", "Closed Won", 100, 7),
+                ("service", "lost", "Closed Lost", 0, 8),
+                ("repair", "new", "New Lead", 10, 1),
+                ("repair", "qualified", "Qualified", 30, 2),
+                ("repair", "appointment_set", "Appointment Set", 50, 3),
+                ("repair", "appointment_occurred", "Appointment Occurred", 70, 4),
+                ("repair", "estimate_sent", "Estimate Sent", 80, 5),
+                ("repair", "followed_up", "Followed Up", 85, 6),
+                ("repair", "won", "Closed Won", 100, 7),
+                ("repair", "lost", "Closed Lost", 0, 8),
+                ("remodel", "new", "New Lead", 10, 1),
+                ("remodel", "contacted", "Contacted", 25, 2),
+                ("remodel", "qualified", "Qualified", 40, 3),
+                ("remodel", "design", "Design/Consultation", 60, 4),
+                ("remodel", "proposal", "Proposal Sent", 75, 5),
+                ("remodel", "negotiation", "Negotiation", 90, 6),
+                ("remodel", "won", "Closed Won", 100, 7),
+                ("remodel", "lost", "Closed Lost", 0, 8),
+            ]
+            cursor.executemany(
+                "INSERT INTO pipeline_stages VALUES (%s, %s, %s, %s, %s) ON CONFLICT (pipeline_id, stage) DO NOTHING",
+                stages
+            )
+    except:
+        pass  # Stages already exist
     
     conn.commit()
     conn.close()
