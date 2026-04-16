@@ -9,10 +9,10 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-brand">
+        <a href="{{ url_for('dashboard') }}" class="nav-brand">
             <i class="fas fa-swimming-pool"></i>
             <span>Love Pool Care CRM</span>
-        </div>
+        </a>
         <ul class="nav-menu">
             <li><a href="{{ url_for('dashboard') }}" class="{% if request.endpoint == 'dashboard' %}active{% endif %}">
                 <i class="fas fa-dashboard"></i> Dashboard
