@@ -737,3 +737,38 @@ body {
 .floating-actions .btn {
     box-shadow: var(--shadow-lg);
 }
+
+/* Fix line stats cards to match top cards */
+.line-stats .stat-card {
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.line-stats .stat-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    background: var(--gray-100);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.line-stats .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-top: 0.5rem;
+}
+
+.line-stats .stat-label {
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}

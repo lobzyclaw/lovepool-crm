@@ -6,8 +6,6 @@ Flask-based web UI for the CRM
 
 import sys
 import os
-
-# Fix imports for Railway + Docker
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
@@ -152,27 +150,36 @@ def deals_list():
 
 @app.route('/deals/new', methods=['GET', 'POST'])
 def deal_new():
-    """Create new deal"""
+    """Create new opportunity"""
     contact_id = request.args.get('contact_id')
     
     if request.method == 'POST':
-        data = {
-            'contact_id': request.form.get('contact_id'),
-            'business_line': request.form.get('business_line'),
-            'title': request.form.get('title'),
-            'value': float(request.form.get('value', 0)) if request.form.get('value') else None,
-            'expected_close_date': request.form.get('expected_close_date'),
-            'assigned_to': request.form.get('assigned_to'),
-            'notes': request.form.get('notes')
-        }
-        
-        result = api_deal_create(data, created_by='usr_rep_1')
-        if result['success']:
-            return redirect(url_for('deal_detail', deal_id=result['deal']['id']))
-        else:
+        try:
+            data = {
+                'contact_id': request.form.get('contact_id'),
+                'business_line': request.form.get('business_line'),
+                'title': request.form.get('title'),
+                'value': float(request.form.get('value', 0)) if request.form.get('value') else None,
+                'expected_close_date': request.form.get('expected_close_date'),
+                'assigned_to': request.form.get('assigned_to'),
+                'notes': request.form.get('notes')
+            }
+            
+            result = api_deal_create(data, created_by='usr_rep_1')
+            if result['success']:
+                return redirect(url_for('deal_detail', deal_id=result['deal']['id']))
+            else:
+                ref = api_reference_data()
+                return render_template('deal_form.html',
+                                     error=result.get('errors', ['Unknown error']),
+                                     data=request.form,
+                                     pipelines=ref.get('pipelines', {}),
+                                     users=ref.get('users', []),
+                                     contact_id=contact_id)
+        except Exception as e:
             ref = api_reference_data()
             return render_template('deal_form.html',
-                                 error=result.get('errors', ['Unknown error']),
+                                 error=[str(e)],
                                  data=request.form,
                                  pipelines=ref.get('pipelines', {}),
                                  users=ref.get('users', []),
@@ -285,6 +292,5 @@ def api_ref_data():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    # Safer debug logic - only True if explicitly set to development
     debug = os.environ.get('FLASK_ENV') == 'development'
     app.run(debug=debug, host='0.0.0.0', port=port)
