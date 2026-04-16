@@ -3,5 +3,13 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "cron": {
+      "callrail-sync": {
+        "schedule": "*/15 * * * *",
+        "command": "python sync_callrail_cron.py"
+      }
+    }
   }
 }
