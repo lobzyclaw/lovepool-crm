@@ -18,8 +18,11 @@ ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 ENV DATA_DIR=/app/data
 
+# Make entrypoint executable
+RUN chmod +x entrypoint.sh
+
 # Expose port
 EXPOSE 5000
 
-# Use shell form to properly expand $PORT
-CMD gunicorn -w 4 -b 0.0.0.0:${PORT} --timeout 120 app:app
+# Use entrypoint script
+ENTRYPOINT ["./entrypoint.sh"]
