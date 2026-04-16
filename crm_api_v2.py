@@ -96,7 +96,8 @@ def api_deal_get(deal_id: str) -> Dict:
             "name": f"{deal['first_name']} {deal['last_name']}",
             "phone": deal.get("phone"),
             "email": deal.get("email"),
-            "company": deal.get("company_name")
+            "company": deal.get("company_name"),
+            "source": deal.get("source")
         }
     }
     

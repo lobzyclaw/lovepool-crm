@@ -12,7 +12,7 @@ from crm_api_v2 import api_contact_create, api_deal_create
 
 # Get API key from environment variable
 CALLRAIL_API_KEY = os.environ.get('CALLRAIL_API_KEY')
-CALLRAIL_ACCOUNT_ID = os.environ.get('CALLRAIL_ACCOUNT_ID')  # Your CallRail account ID
+CALLRAIL_ACCOUNT_ID = os.environ.get('CALLRAIL_ACCOUNT_ID')
 
 BASE_URL = "https://api.callrail.com/v3"
 
@@ -23,21 +23,30 @@ def get_headers():
         'Content-Type': 'application/json'
     }
 
+def fetch_tracking_numbers() -> Dict[str, str]:
+    """Fetch tracking numbers to map IDs to names"""
+    if not CALLRAIL_API_KEY or not CALLRAIL_ACCOUNT_ID:
+        return {}
+    
+    url = f"{BASE_URL}/a/{CALLRAIL_ACCOUNT_ID}/trackers.json"
+    
+    try:
+        response = requests.get(url, headers=get_headers(), timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        # Map tracking number ID to name
+        return {t.get('id'): t.get('name', t.get('tracking_number', 'Unknown')) 
+                for t in data.get('trackers', [])}
+    except Exception as e:
+        print(f"Error fetching tracking numbers: {e}")
+        return {}
+
 def fetch_recent_calls(hours: int = 24) -> List[Dict]:
-    """
-    Fetch recent calls from CallRail API
-    
-    Args:
-        hours: How many hours back to fetch (default 24)
-    
-    Returns:
-        List of call records
-    """
+    """Fetch recent calls from CallRail API"""
     if not CALLRAIL_API_KEY or not CALLRAIL_ACCOUNT_ID:
         print("CallRail API credentials not configured")
         return []
     
-    # Calculate date range
     end_date = datetime.now()
     start_date = end_date - timedelta(hours=hours)
     
@@ -46,28 +55,31 @@ def fetch_recent_calls(hours: int = 24) -> List[Dict]:
     params = {
         'start_date': start_date.strftime('%Y-%m-%d'),
         'end_date': end_date.strftime('%Y-%m-%d'),
-        'per_page': 100  # Max per page
+        'per_page': 100
     }
     
     try:
         response = requests.get(url, headers=get_headers(), params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-        return data.get('calls', [])
+        calls = data.get('calls', [])
+        
+        # Enrich calls with tracking number names
+        tracking_map = fetch_tracking_numbers()
+        for call in calls:
+            tracker_id = call.get('tracker_id')
+            if tracker_id and tracker_id in tracking_map:
+                call['tracking_number_name'] = tracking_map[tracker_id]
+            else:
+                call['tracking_number_name'] = call.get('tracking_number_name') or call.get('source', 'Unknown')
+        
+        return calls
     except Exception as e:
         print(f"Error fetching calls: {e}")
         return []
 
 def fetch_recent_form_submissions(hours: int = 24) -> List[Dict]:
-    """
-    Fetch recent form submissions from CallRail API
-    
-    Args:
-        hours: How many hours back to fetch (default 24)
-    
-    Returns:
-        List of form submission records
-    """
+    """Fetch recent form submissions from CallRail API"""
     if not CALLRAIL_API_KEY or not CALLRAIL_ACCOUNT_ID:
         print("CallRail API credentials not configured")
         return []
@@ -93,15 +105,7 @@ def fetch_recent_form_submissions(hours: int = 24) -> List[Dict]:
         return []
 
 def process_call(call: Dict) -> Dict:
-    """
-    Process a CallRail call and create contact/opportunity
-    
-    Args:
-        call: CallRail call record
-    
-    Returns:
-        Result dict with contact and opportunity info
-    """
+    """Process a CallRail call and create contact/opportunity"""
     result = {"success": False, "contact": None, "opportunity": None}
     
     try:
@@ -116,6 +120,9 @@ def process_call(call: Dict) -> Dict:
             result['error'] = 'No phone number'
             return result
         
+        # Use tracking number name as source
+        tracking_name = call.get('tracking_number_name', call.get('source', 'CallRail'))
+        
         # Create contact
         contact_data = {
             'first_name': first_name,
@@ -124,15 +131,17 @@ def process_call(call: Dict) -> Dict:
             'email': call.get('customer_email', ''),
             'company_name': None,
             'address': {'street': None, 'city': None, 'state': None, 'zip': None},
-            'source': map_callrail_source(call.get('source', 'call')),
+            'source': tracking_name,  # Use tracking number name as source
             'assigned_to': 'usr_rep_1',
             'notes': build_call_notes(call),
             'custom_fields': {
                 'callrail_call_id': call.get('id'),
                 'callrail_tracking_number': call.get('tracking_phone_number'),
+                'callrail_tracking_name': tracking_name,
                 'call_duration': call.get('duration'),
                 'call_recording': call.get('recording_url', ''),
-                'call_answered': call.get('answered', False)
+                'call_answered': call.get('answered', False),
+                'original_source': call.get('source', '')
             }
         }
         
@@ -145,15 +154,15 @@ def process_call(call: Dict) -> Dict:
             duration = call.get('duration', 0)
             answered = call.get('answered', False)
             
-            if answered and duration > 60:  # Qualified call
+            if answered and duration > 60:
                 opp_data = {
                     'contact_id': contact_result['contact']['id'],
-                    'business_line': infer_business_line(call.get('source', '')),
+                    'business_line': infer_business_line(tracking_name),
                     'title': f"Call from {first_name} {last_name}",
                     'value': None,
                     'expected_close_date': None,
                     'assigned_to': 'usr_rep_1',
-                    'notes': f"Duration: {duration}s | Source: {call.get('source', 'Unknown')} | Answered: {answered}"
+                    'notes': f"Duration: {duration}s | Source: {tracking_name} | Answered: {answered}"
                 }
                 
                 opp_result = api_deal_create(opp_data, created_by='callrail_api')
@@ -178,19 +187,10 @@ def process_call(call: Dict) -> Dict:
     return result
 
 def process_form_submission(form: Dict) -> Dict:
-    """
-    Process a CallRail form submission
-    
-    Args:
-        form: Form submission record
-    
-    Returns:
-        Result dict with contact and opportunity info
-    """
+    """Process a CallRail form submission"""
     result = {"success": False, "contact": None, "opportunity": None}
     
     try:
-        # Parse customer info
         customer_name = form.get('customer_name', 'Unknown')
         name_parts = customer_name.split(' ', 1)
         first_name = name_parts[0] if name_parts else 'Unknown'
@@ -203,10 +203,9 @@ def process_form_submission(form: Dict) -> Dict:
             result['error'] = 'No contact info provided'
             return result
         
-        # Get form field data
         form_data = form.get('form_data', {})
+        source = form.get('source', 'Website Form')
         
-        # Create contact
         contact_data = {
             'first_name': first_name,
             'last_name': last_name,
@@ -214,9 +213,9 @@ def process_form_submission(form: Dict) -> Dict:
             'email': email,
             'company_name': None,
             'address': {'street': None, 'city': None, 'state': None, 'zip': None},
-            'source': map_callrail_source(form.get('source', 'website')),
+            'source': source,
             'assigned_to': 'usr_rep_1',
-            'notes': f"Form submission from {form.get('source', 'website')}. Campaign: {form.get('campaign', 'N/A')}",
+            'notes': f"Form submission from {source}. Campaign: {form.get('campaign', 'N/A')}",
             'custom_fields': {
                 'callrail_form_id': form.get('id'),
                 'form_fields': form_data
@@ -228,7 +227,6 @@ def process_form_submission(form: Dict) -> Dict:
         if contact_result['success']:
             result['contact'] = contact_result['contact']
             
-            # Create opportunity from form
             opp_data = {
                 'contact_id': contact_result['contact']['id'],
                 'business_line': infer_business_line_from_form(form_data),
@@ -253,15 +251,7 @@ def process_form_submission(form: Dict) -> Dict:
     return result
 
 def sync_callrail_data(hours: int = 24) -> Dict:
-    """
-    Main sync function - fetch and process all recent CallRail data
-    
-    Args:
-        hours: How many hours back to sync
-    
-    Returns:
-        Summary of processed records
-    """
+    """Main sync function"""
     summary = {
         'calls_processed': 0,
         'forms_processed': 0,
@@ -270,7 +260,6 @@ def sync_callrail_data(hours: int = 24) -> Dict:
         'errors': []
     }
     
-    # Process calls
     calls = fetch_recent_calls(hours)
     for call in calls:
         result = process_call(call)
@@ -283,7 +272,6 @@ def sync_callrail_data(hours: int = 24) -> Dict:
         else:
             summary['errors'].append(f"Call {call.get('id')}: {result.get('error')}")
     
-    # Process forms
     forms = fetch_recent_form_submissions(hours)
     for form in forms:
         result = process_form_submission(form)
@@ -298,24 +286,10 @@ def sync_callrail_data(hours: int = 24) -> Dict:
     
     return summary
 
-# Helper functions (same as webhook version)
-def map_callrail_source(source: str) -> str:
-    """Map CallRail source to CRM source"""
-    source_map = {
-        'Google Ads': 'google',
-        'Google Organic': 'google',
-        'Facebook': 'facebook',
-        'Instagram': 'instagram',
-        'Direct': 'website',
-        'Referral': 'referral',
-        'Bing': 'other'
-    }
-    return source_map.get(source, 'other')
-
 def infer_business_line(source: str) -> str:
-    """Infer business line from source"""
+    """Infer business line from tracking number name"""
     source_lower = source.lower()
-    if 'service' in source_lower or 'cleaning' in source_lower:
+    if 'service' in source_lower or 'cleaning' in source_lower or 'pool' in source_lower:
         return 'service'
     elif 'repair' in source_lower or 'fix' in source_lower:
         return 'repair'
@@ -351,7 +325,8 @@ def parse_budget(budget_str: str) -> Optional[float]:
 def build_call_notes(call: Dict) -> str:
     """Build notes from call data"""
     notes = []
-    notes.append(f"Source: {call.get('source', 'Unknown')}")
+    tracking_name = call.get('tracking_number_name', 'Unknown')
+    notes.append(f"Tracking Number: {tracking_name}")
     notes.append(f"Duration: {call.get('duration', 0)} seconds")
     notes.append(f"Answered: {'Yes' if call.get('answered') else 'No'}")
     if call.get('recording_url'):

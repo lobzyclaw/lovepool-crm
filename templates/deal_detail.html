@@ -51,6 +51,13 @@
                 </div>
             </div>
 
+            {% if contact.source %}
+            <div class="source-section" style="margin-top: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 8px; border-left: 3px solid #3b82f6;">
+                <label style="color: #0369a1; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Source</label>
+                <p style="font-size: 1.1rem; font-weight: 600; color: #0369a1; margin: 0.25rem 0 0 0;">{{ contact.source }}</p>
+            </div>
+            {% endif %}
+
             {% if deal.stage not in ['won', 'lost'] %}
             <h3 style="margin-top: 1.5rem;">Update Stage</h3>
             <form method="post" action="{{ url_for('deal_update_stage', deal_id=deal.id) }}" class="stage-form">
@@ -76,11 +83,16 @@
                 <h3><a href="{{ url_for('contact_detail', contact_id=deal.contact_id) }}">
                     {{ contact.first_name }} {{ contact.last_name }}
                 </a></h3>
-                {% if contact.company_name %}
-                <p>{{ contact.company_name }}</p>
+                {% if contact.company %}
+                <p>{{ contact.company }}</p>
                 {% endif %}
                 <p><i class="fas fa-phone"></i> {{ contact.phone or '—' }}</p>
                 <p><i class="fas fa-envelope"></i> {{ contact.email or '—' }}</p>
+                {% if contact.source %}
+                <p style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e5e7eb;">
+                    <i class="fas fa-bullseye"></i> <strong>Source:</strong> {{ contact.source }}
+                </p>
+                {% endif %}
             </div>
         </div>
     </div>

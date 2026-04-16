@@ -29,7 +29,7 @@
                 </div>
             </div>
             
-            <div class="column-content" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <div class="column-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="leaveDrop(event)">
                 {% for deal in column.deals %}
                 <div class="opportunity-card" draggable="true" ondragstart="drag(event)" data-deal-id="{{ deal.id }}">
                     <a href="{{ url_for('deal_detail', deal_id=deal.id) }}" class="opp-link">
@@ -67,6 +67,7 @@
 <style>
 .opportunity-card {
     cursor: grab;
+    position: relative;
 }
 .opportunity-card:active {
     cursor: grabbing;
@@ -77,6 +78,7 @@
 .column-content.drag-over {
     background: rgba(59, 130, 246, 0.1);
     border-radius: 8px;
+    min-height: 100px;
 }
 .opp-link {
     text-decoration: none;
@@ -108,21 +110,32 @@
 // Drag and Drop functionality
 function allowDrop(ev) {
     ev.preventDefault();
-    ev.currentTarget.classList.add('drag-over');
+    const columnContent = ev.currentTarget;
+    columnContent.classList.add('drag-over');
+}
+
+function leaveDrop(ev) {
+    const columnContent = ev.currentTarget;
+    columnContent.classList.remove('drag-over');
 }
 
 function drag(ev) {
-    ev.dataTransfer.setData("deal_id", ev.target.dataset.dealId);
-    ev.target.classList.add('dragging');
+    ev.dataTransfer.setData("deal_id", ev.currentTarget.dataset.dealId);
+    ev.currentTarget.classList.add('dragging');
 }
 
 function drop(ev) {
     ev.preventDefault();
-    ev.currentTarget.classList.remove('drag-over');
+    ev.stopPropagation();
+    
+    const columnContent = ev.currentTarget;
+    columnContent.classList.remove('drag-over');
     
     const dealId = ev.dataTransfer.getData("deal_id");
-    const column = ev.currentTarget.closest('.kanban-column');
-    const newStage = column.dataset.stage;
+    const column = columnContent.closest('.kanban-column');
+    const newStage = column ? column.dataset.stage : null;
+    
+    console.log('Drop:', { dealId, newStage });
     
     if (dealId && newStage) {
         moveDeal(dealId, newStage);
@@ -134,15 +147,6 @@ function drop(ev) {
     });
 }
 
-// Remove drag-over class when leaving
-document.querySelectorAll('.column-content').forEach(col => {
-    col.addEventListener('dragleave', function(e) {
-        if (e.target === this) {
-            this.classList.remove('drag-over');
-        }
-    });
-});
-
 // Update stage via dropdown
 function updateStage(select) {
     const dealId = select.dataset.dealId;
@@ -152,17 +156,29 @@ function updateStage(select) {
 
 // API call to move deal
 function moveDeal(dealId, newStage) {
-    fetch(`/deals/${dealId}/update_stage`, {
+    console.log('Moving deal:', dealId, 'to stage:', newStage);
+    
+    const formData = new URLSearchParams();
+    formData.append('stage', newStage);
+    
+    fetch('/deals/' + dealId + '/update_stage', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
         },
-        body: `stage=${encodeURIComponent(newStage)}`
+        body: formData.toString()
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error('HTTP error! status: ' + response.status);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.success) {
-            // Reload page to show updated pipeline
             window.location.reload();
         } else {
             alert('Error moving opportunity: ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
@@ -170,7 +186,7 @@ function moveDeal(dealId, newStage) {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error moving opportunity');
+        alert('Error moving opportunity: ' + error.message);
     });
 }
 </script>
