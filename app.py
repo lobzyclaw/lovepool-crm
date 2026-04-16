@@ -313,3 +313,29 @@ def callrail_webhook():
     result = handle_callrail_webhook(payload)
     
     return jsonify(result), 200 if result['success'] else 400
+
+# ============ CALLRAIL API SYNC ============
+
+@app.route('/admin/sync-callrail', methods=['POST'])
+def sync_callrail():
+    """Manually trigger CallRail sync"""
+    from callrail_api import sync_callrail_data
+    
+    hours = request.args.get('hours', 24, type=int)
+    result = sync_callrail_data(hours)
+    
+    return jsonify(result)
+
+@app.route('/admin/sync-callrail/status')
+def sync_callrail_status():
+    """Check if CallRail API is configured"""
+    import os
+    
+    api_key = os.environ.get('CALLRAIL_API_KEY')
+    account_id = os.environ.get('CALLRAIL_ACCOUNT_ID')
+    
+    return jsonify({
+        'configured': bool(api_key and account_id),
+        'has_api_key': bool(api_key),
+        'has_account_id': bool(account_id)
+    })
