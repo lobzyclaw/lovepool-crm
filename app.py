@@ -22,9 +22,6 @@ from auth import init_auth, is_public_route
 import json
 from datetime import datetime
 
-# Initialize database
-init_db()
-
 app = Flask(__name__, 
     template_folder='templates',
     static_folder='static'
@@ -461,6 +458,15 @@ def fix_pipelines_route():
     except Exception as e:
         import traceback
         return jsonify({'success': False, 'error': str(e), 'traceback': traceback.format_exc()}), 500
+
+# ============ INIT DB ON STARTUP ============
+
+@app.before_request
+def init_db_once():
+    """Initialize database on first request"""
+    if not hasattr(app, '_db_initialized'):
+        init_db()
+        app._db_initialized = True
 
 # ============ MAIN ============
 

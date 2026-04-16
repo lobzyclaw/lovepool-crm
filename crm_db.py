@@ -20,6 +20,9 @@ USE_POSTGRES = DATABASE_URL is not None
 if USE_POSTGRES:
     import psycopg2
     from psycopg2.extras import RealDictCursor
+    from psycopg2.pool import SimpleConnectionPool
+    # Connection pool for PostgreSQL
+    _connection_pool = None
 else:
     import sqlite3
 
@@ -56,14 +59,24 @@ class DBConnection:
         self._conn.close()
 
 def get_db():
-    """Get database connection"""
+    """Get database connection - uses pooling for PostgreSQL"""
+    global _connection_pool
+    
     if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
+        if _connection_pool is None:
+            _connection_pool = SimpleConnectionPool(1, 10, DATABASE_URL)
+        conn = _connection_pool.getconn()
+        return DBConnection(conn)
     else:
         conn = sqlite3.connect(str(DB_PATH))
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
-    return DBConnection(conn)
+        return DBConnection(conn)
+
+def release_db(db_conn):
+    """Release connection back to pool (PostgreSQL only)"""
+    if USE_POSTGRES and _connection_pool:
+        _connection_pool.putconn(db_conn._conn)
 
 def _execute_safe(cursor, sql, params=None):
     """Execute SQL safely, ignoring duplicate errors"""
