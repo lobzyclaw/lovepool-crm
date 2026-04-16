@@ -10,10 +10,6 @@ import os
 # Fix imports for Railway + Docker
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Debug (remove after fix)
-print("Python path:", sys.path)
-print("Files in /app:", os.listdir('/app') if os.path.exists('/app') else 'N/A')
-
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS
 from crm_api_v2 import (
@@ -289,6 +285,6 @@ def api_ref_data():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    debug = os.environ.get('FLASK_ENV') != 'production'
-    print(f"Starting Love Pool Care CRM Web Server on port {port}...")
+    # Safer debug logic - only True if explicitly set to development
+    debug = os.environ.get('FLASK_ENV') == 'development'
     app.run(debug=debug, host='0.0.0.0', port=port)
