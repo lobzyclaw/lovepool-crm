@@ -411,3 +411,14 @@ def migrate_stages():
         return jsonify({'success': True, 'message': 'Migration complete'})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/fix-pipelines', methods=['POST'])
+def fix_pipelines_route():
+    """Fix pipeline stages"""
+    from fix_pipelines import fix_pipelines
+    try:
+        fix_pipelines()
+        return jsonify({'success': True, 'message': 'Pipelines fixed'})
+    except Exception as e:
+        import traceback
+        return jsonify({'success': False, 'error': str(e), 'traceback': traceback.format_exc()}), 500
