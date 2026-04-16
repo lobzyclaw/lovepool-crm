@@ -147,7 +147,7 @@ def init_db():
             id SERIAL PRIMARY KEY,
             deal_id TEXT NOT NULL,
             timestamp TEXT NOT NULL,
-            user TEXT NOT NULL,
+            "user" TEXT NOT NULL,
             type TEXT NOT NULL,
             old_value TEXT,
             new_value TEXT,
