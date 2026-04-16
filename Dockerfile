@@ -18,11 +18,8 @@ ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 ENV DATA_DIR=/app/data
 
-# Make entrypoint executable
-RUN chmod +x entrypoint.sh
-
 # Expose port
 EXPOSE 5000
 
-# Use entrypoint script
-ENTRYPOINT ["./entrypoint.sh"]
+# Use Python runner
+CMD ["python", "run.py"]
