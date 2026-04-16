@@ -28,9 +28,9 @@
                     <th>Company</th>
                     <th>Phone</th>
                     <th>Email</th>
-                    <th>Location</th>
+                    <th>Source</th>
+                    <th>Tracking #</th>
                     <th>Assigned</th>
-                    <th>Deals</th>
                 </tr>
             </thead>
             <tbody>
@@ -44,12 +44,19 @@
                     <td>{{ contact.company_name or '—' }}</td>
                     <td>{{ contact.phone or '—' }}</td>
                     <td>{{ contact.email or '—' }}</td>
-                    <td>{{ contact.address_city or '—' }}</td>
-                    <td>{{ contact.assigned_to.replace('usr_', '') }}</td>
                     <td>
-                        {% set custom_fields = contact.custom_fields|from_json if contact.custom_fields else {} %}
-                        <span class="badge">{{ custom_fields.pool_type or '—' }}</span>
+                        <span class="source-badge {{ contact.source }}">
+                            {{ contact.source.replace('_', ' ').title() }}
+                        </span>
                     </td>
+                    <td>
+                        {% if contact.custom_fields and contact.custom_fields.callrail_tracking_number %}
+                        <span class="tracking-number">{{ contact.custom_fields.callrail_tracking_number }}</span>
+                        {% else %}
+                        —
+                        {% endif %}
+                    </td>
+                    <td>{{ contact.assigned_to.replace('usr_', '') }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -74,4 +81,40 @@
         Showing {{ contacts|length }} of {{ total }} contacts
     </div>
 </div>
+
+<style>
+.source-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.source-badge.callrail,
+.source-badge.google {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.source-badge.facebook {
+    background: #dbeafe;
+    color: #1e40af;
+}
+.source-badge.website {
+    background: #d1fae5;
+    color: #065f46;
+}
+.source-badge.referral {
+    background: #fef3c7;
+    color: #92400e;
+}
+.source-badge.other {
+    background: #f3f4f6;
+    color: #4b5563;
+}
+.tracking-number {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #0369a1;
+}
+</style>
 {% endblock %}

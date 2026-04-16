@@ -5,7 +5,7 @@
     <div class="contact-header">
         <h1>{{ contact.first_name }} {{ contact.last_name }}</h1>
         <div class="contact-actions">
-            <a href="{{ url_for('deal_new', contact_id=contact.id) }}" class="btn btn-primary">+ New Deal</a>
+            <a href="{{ url_for('deal_new', contact_id=contact.id) }}" class="btn btn-primary">+ New Opportunity</a>
         </div>
     </div>
     
@@ -44,6 +44,34 @@
                 <p>{{ contact.source.replace('_', ' ').title() }}</p>
             </div>
             
+            {% if contact.custom_fields and contact.custom_fields.callrail_tracking_number %}
+            <div class="info-group source-detail">
+                <label>CallRail Tracking Number</label>
+                <p class="tracking-number">{{ contact.custom_fields.callrail_tracking_number }}</p>
+            </div>
+            {% endif %}
+            
+            {% if contact.custom_fields and contact.custom_fields.callrail_call_id %}
+            <div class="info-group source-detail">
+                <label>CallRail Call ID</label>
+                <p>{{ contact.custom_fields.callrail_call_id }}</p>
+            </div>
+            {% endif %}
+            
+            {% if contact.custom_fields and contact.custom_fields.call_duration %}
+            <div class="info-group source-detail">
+                <label>Call Duration</label>
+                <p>{{ contact.custom_fields.call_duration }} seconds</p>
+            </div>
+            {% endif %}
+            
+            {% if contact.custom_fields and contact.custom_fields.call_recording %}
+            <div class="info-group source-detail">
+                <label>Call Recording</label>
+                <p><a href="{{ contact.custom_fields.call_recording }}" target="_blank">Listen to recording</a></p>
+            </div>
+            {% endif %}
+            
             <div class="info-group">
                 <label>Assigned To</label>
                 <p>{{ contact.assigned_to }}</p>
@@ -56,7 +84,7 @@
         </div>
         
         <div class="contact-deals">
-            <h2>Deals ({{ deals|length }})</h2>
+            <h2>Opportunities ({{ deals|length }})</h2>
             
             {% if deals %}
             <div class="deals-list">
@@ -71,8 +99,8 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="empty">No deals yet.</p>
-            <a href="{{ url_for('deal_new', contact_id=contact.id) }}" class="btn btn-primary">Create Deal</a>
+            <p class="empty">No opportunities yet.</p>
+            <a href="{{ url_for('deal_new', contact_id=contact.id) }}" class="btn btn-primary">Create Opportunity</a>
             {% endif %}
         </div>
     </div>
@@ -92,4 +120,26 @@
     </div>
     {% endif %}
 </div>
+
+<style>
+.source-detail {
+    background: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    border-radius: 4px;
+}
+.source-detail label {
+    color: #0369a1;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.tracking-number {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0369a1;
+}
+</style>
 {% endblock %}
