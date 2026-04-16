@@ -326,15 +326,22 @@ def callrail_webhook():
     """Receive CallRail webhooks - PUBLIC route with secret auth"""
     from callrail_integration import handle_callrail_webhook
     
-    # Check webhook secret
+    # Require webhook secret - reject if not configured or incorrect
     webhook_secret = os.environ.get('CALLRAIL_WEBHOOK_SECRET')
-    if webhook_secret:
-        # Check query param or header
-        provided_secret = request.args.get('secret') or request.headers.get('X-Webhook-Secret')
-        if provided_secret != webhook_secret:
-            return jsonify({'success': False, 'error': 'Invalid secret'}), 403
+    if not webhook_secret:
+        return jsonify({'success': False, 'error': 'Webhook not configured'}), 503
+    
+    # Check query param or header
+    provided_secret = request.args.get('secret') or request.headers.get('X-Webhook-Secret')
+    if not provided_secret:
+        return jsonify({'success': False, 'error': 'Missing secret'}), 401
+    if provided_secret != webhook_secret:
+        return jsonify({'success': False, 'error': 'Invalid secret'}), 403
     
     payload = request.get_json()
+    if not payload:
+        return jsonify({'success': False, 'error': 'No payload received'}), 400
+    
     result = handle_callrail_webhook(payload)
     
     return jsonify(result), 200 if result['success'] else 400
