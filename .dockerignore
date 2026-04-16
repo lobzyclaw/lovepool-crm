@@ -1,0 +1,8 @@
+.git
+.github
+.gitignore
+.railwayignore
+*.md
+deploy.sh
+vercel.json
+wsgi.py
