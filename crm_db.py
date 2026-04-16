@@ -29,16 +29,44 @@ if not USE_POSTGRES:
     CRM_DIR.mkdir(parents=True, exist_ok=True)
     DB_PATH = CRM_DIR / "crm.db"
 
+class DBConnection:
+    """Wrapper to provide consistent interface between SQLite and PostgreSQL"""
+    def __init__(self, conn):
+        self._conn = conn
+        self._cursor = None
+    
+    def cursor(self):
+        if USE_POSTGRES:
+            return self._conn.cursor(cursor_factory=RealDictCursor)
+        else:
+            return self._conn.cursor()
+    
+    def execute(self, sql, params=None):
+        """Execute SQL directly (for backwards compatibility)"""
+        cur = self.cursor()
+        if params:
+            cur.execute(sql, params)
+        else:
+            cur.execute(sql)
+        return cur
+    
+    def commit(self):
+        self._conn.commit()
+    
+    def close(self):
+        if self._cursor:
+            self._cursor.close()
+        self._conn.close()
+
 def get_db():
     """Get database connection"""
     if USE_POSTGRES:
         conn = psycopg2.connect(DATABASE_URL)
-        return conn
     else:
         conn = sqlite3.connect(str(DB_PATH))
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
-        return conn
+    return DBConnection(conn)
 
 def _execute_safe(cursor, sql, params=None):
     """Execute SQL safely, ignoring duplicate errors"""
