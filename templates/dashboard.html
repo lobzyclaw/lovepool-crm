@@ -7,26 +7,26 @@
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-users"></i></div>
-            <div class="stat-value">{{ data.stats.contacts.total }}</div>
+            <div class="stat-value">{{ data.stats.contacts.total or 0 }}</div>
             <div class="stat-label">Total Contacts</div>
-            <div class="stat-change">+{{ data.stats.contacts.new }} new (30d)</div>
+            <div class="stat-change">+{{ data.stats.contacts.new or 0 }} new (30d)</div>
         </div>
         
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-handshake"></i></div>
-            <div class="stat-value">{{ data.stats.deals.open }}</div>
+            <div class="stat-value">{{ data.stats.deals.open or 0 }}</div>
             <div class="stat-label">Open Deals</div>
         </div>
         
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
-            <div class="stat-value">${{ "{:,.0f}".format(data.stats.deals.pipeline_value) }}</div>
+            <div class="stat-value">${{ "{:,.0f}".format(data.stats.deals.pipeline_value or 0) }}</div>
             <div class="stat-label">Pipeline Value</div>
         </div>
         
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-trophy"></i></div>
-            <div class="stat-value">${{ "{:,.0f}".format(data.stats.deals.value_won) }}</div>
+            <div class="stat-value">${{ "{:,.0f}".format(data.stats.deals.value_won or 0) }}</div>
             <div class="stat-label">Won (30d)</div>
         </div>
     </div>
@@ -39,9 +39,9 @@
                 <div class="line-card">
                     <h3>{{ line.title() }}</h3>
                     <div class="line-stats">
-                        <span class="stat open">{{ stats.open }} open</span>
-                        <span class="stat won">{{ stats.won }} won</span>
-                        <span class="stat lost">{{ stats.lost }} lost</span>
+                        <span class="stat open">{{ stats.open or 0 }} open</span>
+                        <span class="stat won">{{ stats.won or 0 }} won</span>
+                        <span class="stat lost">{{ stats.lost or 0 }} lost</span>
                     </div>
                 </div>
                 {% endfor %}
