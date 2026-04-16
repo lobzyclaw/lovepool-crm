@@ -36,15 +36,15 @@
     <div class="business-line-toggle">
         <div class="toggle-label">View by Service Line</div>
         <div class="toggle-slider">
-            <button type="button" class="toggle-btn active" data-line="all">All</button>
-            <button type="button" class="toggle-btn" data-line="service">Service</button>
-            <button type="button" class="toggle-btn" data-line="repair">Repair</button>
-            <button type="button" class="toggle-btn" data-line="remodel">Remodel</button>
+            <button type="button" class="toggle-btn active" onclick="switchLine('all')">All</button>
+            <button type="button" class="toggle-btn" onclick="switchLine('service')">Service</button>
+            <button type="button" class="toggle-btn" onclick="switchLine('repair')">Repair</button>
+            <button type="button" class="toggle-btn" onclick="switchLine('remodel')">Remodel</button>
         </div>
     </div>
 
     <!-- Service Line Stats -->
-    <div class="stats-grid line-stats" id="lineStatsContainer">
+    <div class="stats-grid" id="lineStatsContainer">
         <div class="stat-card">
             <div class="stat-icon"><i class="fas fa-handshake"></i></div>
             <div class="stat-value" id="openOpps">{{ data.stats.deals.open or 0 }}</div>
@@ -69,40 +69,6 @@
             <div class="stat-label">Win Rate</div>
         </div>
     </div>
-
-    <!-- Hidden data for JS -->
-    <script id="lineData" type="application/json">
-    {
-        "all": {
-            "open": {{ data.stats.deals.open or 0 }},
-            "pipeline_value": {{ data.stats.deals.pipeline_value or 0 }},
-            "value_won": {{ data.stats.deals.value_won or 0 }},
-            "won": {{ data.stats.deals.won or 0 }},
-            "lost": {{ data.stats.deals.lost or 0 }}
-        },
-        "service": {
-            "open": {{ data.stats.by_line.service.open if data.stats.by_line and data.stats.by_line.service else 0 }},
-            "pipeline_value": {{ data.stats.by_line.service.pipeline_value if data.stats.by_line and data.stats.by_line.service else 0 }},
-            "value_won": {{ data.stats.by_line.service.value_won if data.stats.by_line and data.stats.by_line.service else 0 }},
-            "won": {{ data.stats.by_line.service.won if data.stats.by_line and data.stats.by_line.service else 0 }},
-            "lost": {{ data.stats.by_line.service.lost if data.stats.by_line and data.stats.by_line.service else 0 }}
-        },
-        "repair": {
-            "open": {{ data.stats.by_line.repair.open if data.stats.by_line and data.stats.by_line.repair else 0 }},
-            "pipeline_value": {{ data.stats.by_line.repair.pipeline_value if data.stats.by_line and data.stats.by_line.repair else 0 }},
-            "value_won": {{ data.stats.by_line.repair.value_won if data.stats.by_line and data.stats.by_line.repair else 0 }},
-            "won": {{ data.stats.by_line.repair.won if data.stats.by_line and data.stats.by_line.repair else 0 }},
-            "lost": {{ data.stats.by_line.repair.lost if data.stats.by_line and data.stats.by_line.repair else 0 }}
-        },
-        "remodel": {
-            "open": {{ data.stats.by_line.remodel.open if data.stats.by_line and data.stats.by_line.remodel else 0 }},
-            "pipeline_value": {{ data.stats.by_line.remodel.pipeline_value if data.stats.by_line and data.stats.by_line.remodel else 0 }},
-            "value_won": {{ data.stats.by_line.remodel.value_won if data.stats.by_line and data.stats.by_line.remodel else 0 }},
-            "won": {{ data.stats.by_line.remodel.won if data.stats.by_line and data.stats.by_line.remodel else 0 }},
-            "lost": {{ data.stats.by_line.remodel.lost if data.stats.by_line and data.stats.by_line.remodel else 0 }}
-        }
-    }
-    </script>
 
     <div class="dashboard-grid">
         {% if data.stats.by_line %}
@@ -177,47 +143,57 @@
     {% endif %}
 </div>
 
-<!-- Floating Action Buttons -->
-<div class="floating-actions">
-    <a href="{{ url_for('contact_new') }}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Contact
-    </a>
-    <a href="{{ url_for('deal_new') }}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Opportunity
-    </a>
-</div>
-
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const toggleBtns = document.querySelectorAll('.toggle-btn');
-    const lineData = JSON.parse(document.getElementById('lineData').textContent);
-    
-    toggleBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Update active state
-            toggleBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            const line = this.dataset.line;
-            const data = lineData[line];
-            
-            // Update stats with animation
-            const openOpps = document.getElementById('openOpps');
-            const pipelineValue = document.getElementById('pipelineValue');
-            const wonValue = document.getElementById('wonValue');
-            const winRate = document.getElementById('winRate');
-            
-            openOpps.textContent = data.open.toLocaleString();
-            pipelineValue.textContent = '$' + (data.pipeline_value || 0).toLocaleString('en-US', {maximumFractionDigits: 0});
-            wonValue.textContent = '$' + (data.value_won || 0).toLocaleString('en-US', {maximumFractionDigits: 0});
-            
-            const totalClosed = (data.won || 0) + (data.lost || 0);
-            const winRateValue = totalClosed > 0 ? Math.round((data.won || 0) / totalClosed * 100) : 0;
-            winRate.textContent = winRateValue + '%';
-        });
+// Line data for toggling
+const lineData = {
+    "all": {
+        "open": {{ data.stats.deals.open or 0 }},
+        "pipeline_value": {{ data.stats.deals.pipeline_value or 0 }},
+        "value_won": {{ data.stats.deals.value_won or 0 }},
+        "won": {{ data.stats.deals.won or 0 }},
+        "lost": {{ data.stats.deals.lost or 0 }}
+    },
+    "service": {
+        "open": {{ data.stats.by_line.service.open if data.stats.by_line and data.stats.by_line.service else 0 }},
+        "pipeline_value": {{ data.stats.by_line.service.pipeline_value|default(0) if data.stats.by_line and data.stats.by_line.service else 0 }},
+        "value_won": {{ data.stats.by_line.service.value_won|default(0) if data.stats.by_line and data.stats.by_line.service else 0 }},
+        "won": {{ data.stats.by_line.service.won|default(0) if data.stats.by_line and data.stats.by_line.service else 0 }},
+        "lost": {{ data.stats.by_line.service.lost|default(0) if data.stats.by_line and data.stats.by_line.service else 0 }}
+    },
+    "repair": {
+        "open": {{ data.stats.by_line.repair.open|default(0) if data.stats.by_line and data.stats.by_line.repair else 0 }},
+        "pipeline_value": {{ data.stats.by_line.repair.pipeline_value|default(0) if data.stats.by_line and data.stats.by_line.repair else 0 }},
+        "value_won": {{ data.stats.by_line.repair.value_won|default(0) if data.stats.by_line and data.stats.by_line.repair else 0 }},
+        "won": {{ data.stats.by_line.repair.won|default(0) if data.stats.by_line and data.stats.by_line.repair else 0 }},
+        "lost": {{ data.stats.by_line.repair.lost|default(0) if data.stats.by_line and data.stats.by_line.repair else 0 }}
+    },
+    "remodel": {
+        "open": {{ data.stats.by_line.remodel.open|default(0) if data.stats.by_line and data.stats.by_line.remodel else 0 }},
+        "pipeline_value": {{ data.stats.by_line.remodel.pipeline_value|default(0) if data.stats.by_line and data.stats.by_line.remodel else 0 }},
+        "value_won": {{ data.stats.by_line.remodel.value_won|default(0) if data.stats.by_line and data.stats.by_line.remodel else 0 }},
+        "won": {{ data.stats.by_line.remodel.won|default(0) if data.stats.by_line and data.stats.by_line.remodel else 0 }},
+        "lost": {{ data.stats.by_line.remodel.lost|default(0) if data.stats.by_line and data.stats.by_line.remodel else 0 }}
+    }
+};
+
+function switchLine(line) {
+    // Update button states
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
     });
-});
+    event.target.classList.add('active');
+    
+    // Get data
+    const d = lineData[line];
+    
+    // Update display
+    document.getElementById('openOpps').textContent = d.open;
+    document.getElementById('pipelineValue').textContent = '$' + d.pipeline_value.toLocaleString();
+    document.getElementById('wonValue').textContent = '$' + d.value_won.toLocaleString();
+    
+    const totalClosed = d.won + d.lost;
+    const winRate = totalClosed > 0 ? Math.round(d.won / totalClosed * 100) : 0;
+    document.getElementById('winRate').textContent = winRate + '%';
+}
 </script>
 {% endblock %}
