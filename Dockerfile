@@ -2,24 +2,17 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application
 COPY . .
 
-# Create data directory for SQLite
+# Create data directory for SQLite on Railway
 RUN mkdir -p /app/data
 
-# Environment variables
-ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
-ENV PYTHONUNBUFFERED=1
-ENV DATA_DIR=/app/data
+ENV PYTHONUNBUFFERED=1 \
+    FLASK_ENV=production \
+    FLASK_APP=app.py
 
-# Expose port
-EXPOSE 5000
-
-# Use Python runner
-CMD ["python", "run.py"]
+# IMPORTANT: Use shell form so ${PORT} expands correctly on Railway
+CMD gunicorn -w 4 -b "0.0.0.0:${PORT:-5000}" --timeout 120 --access-logfile - --error-logfile - app:app

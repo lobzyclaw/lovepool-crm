@@ -6,7 +6,10 @@ Flask-based web UI for the CRM
 
 import sys
 import os
-sys.path.insert(0, '/Users/lobzy/.openclaw/workspace/data/crm')
+
+# Fix path for both local and Railway
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS
@@ -16,7 +19,7 @@ from crm_api_v2 import (
     api_activity_create, api_activity_list,
     api_pipeline_view, api_dashboard, api_report_sales, api_reference_data
 )
-from crm_db import init_db, DB_PATH
+from crm_db import init_db
 import json
 from datetime import datetime
 
