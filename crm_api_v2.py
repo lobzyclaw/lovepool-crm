@@ -269,7 +269,7 @@ def api_report_sales(days: int = 30, user_id: Optional[str] = None) -> Dict:
     cursor = conn.execute("""
         SELECT COUNT(*) FROM deals WHERE stage IN ('won', 'lost')
     """)
-    total_closed = cursor.fetchone()[0]
+    row = cursor.fetchone(); total_closed = list(row.values())[0] if row else 0
     conn.close()
     
     win_rate = (total_won / total_closed * 100) if total_closed > 0 else 0
