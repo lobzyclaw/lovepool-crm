@@ -23,10 +23,11 @@
         </form>
     </div>
     
+    {% if report and report.summary %}
     <div class="report-summary">
         <div class="summary-card">
             <h3>Deals Won</h3>
-            <div class="big-number">{{ report.summary.deals_won }}</div>
+            <div class="big-number">{{ report.summary.deals_won or 0 }}</div>
         </div>
         
         <div class="summary-card">
@@ -44,8 +45,13 @@
             <div class="big-number">{{ "%.1f"|format(report.summary.win_rate or 0) }}%</div>
         </div>
     </div>
+    {% else %}
+    <div class="alert alert-info">
+        <p>No report data available.</p>
+    </div>
+    {% endif %}
     
-    {% if report.by_line %}
+    {% if report and report.by_line %}
     <div class="by-line-section">
         <h2>By Business Line</h2>
         <div class="line-stats">
@@ -64,9 +70,9 @@
     {% endif %}
     
     <div class="deals-won-section">
-        <h2>Deals Won ({{ report.deals|length }})</h2>
+        <h2>Deals Won ({{ report.deals|length if report and report.deals else 0 }})</h2>
         
-        {% if report.deals %}
+        {% if report and report.deals %}
         <div class="deals-table">
             <table>
                 <thead>
