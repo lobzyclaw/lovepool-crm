@@ -153,6 +153,10 @@ def deal_new():
     """Create new opportunity"""
     contact_id = request.args.get('contact_id')
     
+    # Get contacts for dropdown
+    contacts_result = api_contact_search('', limit=100)
+    contacts = contacts_result.get('contacts', []) if contacts_result.get('success') else []
+    
     if request.method == 'POST':
         try:
             data = {
@@ -175,6 +179,7 @@ def deal_new():
                                      data=request.form,
                                      pipelines=ref.get('pipelines', {}),
                                      users=ref.get('users', []),
+                                     contacts=contacts,
                                      contact_id=contact_id)
         except Exception as e:
             ref = api_reference_data()
@@ -183,12 +188,14 @@ def deal_new():
                                  data=request.form,
                                  pipelines=ref.get('pipelines', {}),
                                  users=ref.get('users', []),
+                                 contacts=contacts,
                                  contact_id=contact_id)
     
     ref = api_reference_data()
     return render_template('deal_form.html',
                          pipelines=ref.get('pipelines', {}),
                          users=ref.get('users', []),
+                         contacts=contacts,
                          contact_id=contact_id)
 
 @app.route('/deals/<deal_id>')
