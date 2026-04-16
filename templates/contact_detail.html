@@ -5,6 +5,9 @@
     <div class="contact-header">
         <h1>{{ contact.first_name }} {{ contact.last_name }}</h1>
         <div class="contact-actions">
+            <form method="post" action="{{ url_for('contact_delete', contact_id=contact.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this contact?);">
+                <button type="submit" class="btn btn-secondary" style="background: var(--danger); color: white;">Delete</button>
+            </form>
             <a href="{{ url_for('deal_new', contact_id=contact.id) }}" class="btn btn-primary">+ New Opportunity</a>
         </div>
     </div>

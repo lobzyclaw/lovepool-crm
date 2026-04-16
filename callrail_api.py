@@ -35,7 +35,7 @@ def fetch_tracking_numbers() -> Dict[str, str]:
         response.raise_for_status()
         data = response.json()
         # Map tracking number ID to name
-        return {t.get('id'): t.get('name', t.get('tracking_number', 'Unknown')) 
+        return {str(t.get('id')): t.get('name', t.get('tracking_number', 'Unknown')) 
                 for t in data.get('trackers', [])}
     except Exception as e:
         print(f"Error fetching tracking numbers: {e}")
@@ -62,20 +62,36 @@ def fetch_recent_calls(hours: int = 24) -> List[Dict]:
         response = requests.get(url, headers=get_headers(), params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
+        
+        print(f"CallRail API response keys: {data.keys() if isinstance(data, dict) else 'not dict'}")
+        
         calls = data.get('calls', [])
         
         # Enrich calls with tracking number names
         tracking_map = fetch_tracking_numbers()
+        print(f"Tracking numbers found: {len(tracking_map)}")
+        
         for call in calls:
-            tracker_id = call.get('tracker_id')
-            if tracker_id and tracker_id in tracking_map:
-                call['tracking_number_name'] = tracking_map[tracker_id]
+            # Try different field names for tracking number
+            tracker_id = call.get('tracker_id') or call.get('tracking_number_id')
+            if tracker_id:
+                tracker_id = str(tracker_id)
+                if tracker_id in tracking_map:
+                    call['tracking_number_name'] = tracking_map[tracker_id]
+                else:
+                    # Fallback to source or tracking number
+                    call['tracking_number_name'] = call.get('source') or call.get('tracking_number', 'Unknown')
             else:
-                call['tracking_number_name'] = call.get('tracking_number_name') or call.get('source', 'Unknown')
+                # Use source field directly
+                call['tracking_number_name'] = call.get('source') or 'Unknown'
+            
+            print(f"Call {call.get('id')}: source={call.get('source')}, tracker_id={tracker_id}, name={call.get('tracking_number_name')}")
         
         return calls
     except Exception as e:
         print(f"Error fetching calls: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def fetch_recent_form_submissions(hours: int = 24) -> List[Dict]:
@@ -123,6 +139,8 @@ def process_call(call: Dict) -> Dict:
         # Use tracking number name as source
         tracking_name = call.get('tracking_number_name', call.get('source', 'CallRail'))
         
+        print(f"Processing call: {first_name} {last_name}, source: {tracking_name}")
+        
         # Create contact
         contact_data = {
             'first_name': first_name,
@@ -131,7 +149,7 @@ def process_call(call: Dict) -> Dict:
             'email': call.get('customer_email', ''),
             'company_name': None,
             'address': {'street': None, 'city': None, 'state': None, 'zip': None},
-            'source': tracking_name,  # Use tracking number name as source
+            'source': tracking_name,
             'assigned_to': 'usr_rep_1',
             'notes': build_call_notes(call),
             'custom_fields': {
@@ -183,6 +201,8 @@ def process_call(call: Dict) -> Dict:
     
     except Exception as e:
         result['error'] = str(e)
+        import traceback
+        traceback.print_exc()
     
     return result
 
@@ -261,6 +281,8 @@ def sync_callrail_data(hours: int = 24) -> Dict:
     }
     
     calls = fetch_recent_calls(hours)
+    print(f"Fetched {len(calls)} calls from CallRail")
+    
     for call in calls:
         result = process_call(call)
         if result['success']:
@@ -273,6 +295,8 @@ def sync_callrail_data(hours: int = 24) -> Dict:
             summary['errors'].append(f"Call {call.get('id')}: {result.get('error')}")
     
     forms = fetch_recent_form_submissions(hours)
+    print(f"Fetched {len(forms)} forms from CallRail")
+    
     for form in forms:
         result = process_form_submission(form)
         if result['success']:

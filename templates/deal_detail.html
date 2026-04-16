@@ -15,6 +15,7 @@
             </p>
         </div>
         <div class="deal-actions">
+            <a href="{{ url_for('pipeline_view', pipeline_id=deal.business_line) }}" class="btn btn-secondary">← Back to Pipeline</a>
             {% if deal.stage not in ['won', 'lost'] %}
             <form method="post" action="{{ url_for('deal_close', deal_id=deal.id) }}" class="close-deal-form" style="display: inline;">
                 <input type="hidden" name="outcome" value="won">
@@ -59,6 +60,15 @@
             {% endif %}
 
             {% if deal.stage not in ['won', 'lost'] %}
+            <h3 style="margin-top: 1.5rem;">Business Line</h3>
+            <form method="post" action="{{ url_for('deal_update_business_line', deal_id=deal.id) }}" class="stage-form">
+                <select name="business_line" class="stage-select" onchange="this.form.submit()">
+                    <option value="service" {% if deal.business_line == 'service' %}selected{% endif %}>Service</option>
+                    <option value="repair" {% if deal.business_line == 'repair' %}selected{% endif %}>Repair</option>
+                    <option value="remodel" {% if deal.business_line == 'remodel' %}selected{% endif %}>Remodel</option>
+                </select>
+            </form>
+
             <h3 style="margin-top: 1.5rem;">Update Stage</h3>
             <form method="post" action="{{ url_for('deal_update_stage', deal_id=deal.id) }}" class="stage-form">
                 <select name="stage" class="stage-select" onchange="this.form.submit()">

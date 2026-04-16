@@ -339,3 +339,63 @@ def sync_callrail_status():
         'has_api_key': bool(api_key),
         'has_account_id': bool(account_id)
     })
+
+# ============ DELETE ROUTES ============
+
+@app.route('/contacts/<contact_id>/delete', methods=['POST'])
+def contact_delete(contact_id):
+    """Delete contact"""
+    from crm_api_v2 import api_contact_delete
+    result = api_contact_delete(contact_id)
+    
+    if request.is_json:
+        return jsonify(result)
+    
+    if result['success']:
+        return redirect(url_for('contacts_list'))
+    else:
+        return render_template('error.html', error=result.get('errors', ['Unknown error']))
+
+@app.route('/deals/<deal_id>/delete', methods=['POST'])
+def deal_delete(deal_id):
+    """Delete deal"""
+    from crm_api_v2 import api_deal_delete
+    result = api_deal_delete(deal_id)
+    
+    if request.is_json:
+        return jsonify(result)
+    
+    if result['success']:
+        return redirect(url_for('deals_list'))
+    else:
+        return render_template('error.html', error=result.get('errors', ['Unknown error']))
+
+# ============ BUSINESS LINE UPDATE ============
+
+@app.route('/deals/<deal_id>/update_business_line', methods=['POST'])
+def deal_update_business_line(deal_id):
+    """Update deal business line"""
+    from crm_db import get_db
+    
+    new_business_line = request.form.get('business_line')
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get current deal
+    cursor.execute("SELECT * FROM deals WHERE id = %s", (deal_id,))
+    deal = cursor.fetchone()
+    
+    if not deal:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Deal not found'})
+    
+    # Update business line and reset stage to first stage of new pipeline
+    cursor.execute(
+        "UPDATE deals SET business_line = %s, stage = 'new', updated_at = %s WHERE id = %s",
+        (new_business_line, datetime.now().isoformat(), deal_id)
+    )
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('deal_detail', deal_id=deal_id))

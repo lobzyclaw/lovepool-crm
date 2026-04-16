@@ -410,3 +410,18 @@ def _serialize_activity(activity: Dict) -> Dict:
         "deal_title": activity.get("deal_title_snapshot"),
         "created_at": activity["created_at"]
     }
+# ============ DELETE API ============
+
+def api_contact_delete(contact_id: str) -> Dict:
+    """Delete contact"""
+    success, result = db_contact_delete(contact_id)
+    if success:
+        return {"success": True, "message": "Contact deleted"}
+    return {"success": False, "errors": result}
+
+def api_deal_delete(deal_id: str) -> Dict:
+    """Delete deal"""
+    success, result = db_deal_delete(deal_id)
+    if success:
+        return {"success": True, "message": "Deal deleted"}
+    return {"success": False, "errors": result}

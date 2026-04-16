@@ -928,3 +928,50 @@ def db_get_stale_deals(days: int = 14) -> List[Dict]:
 if __name__ == "__main__":
     init_db()
     print("Database initialized")
+
+# ============ DELETE OPERATIONS ============
+
+def db_contact_delete(contact_id: str) -> Tuple[bool, Any]:
+    """Soft delete contact by marking as deleted"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM contacts WHERE id = %s", (contact_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return False, ["Contact not found"]
+    
+    try:
+        # Soft delete - mark as deleted instead of actually deleting
+        cursor.execute(
+            "UPDATE contacts SET deleted_at = %s, updated_at = %s WHERE id = %s",
+            (now_iso(), now_iso(), contact_id)
+        )
+        conn.commit()
+        conn.close()
+        return True, {"id": contact_id, "deleted": True}
+    except Exception as e:
+        conn.close()
+        return False, [str(e)]
+
+def db_deal_delete(deal_id: str) -> Tuple[bool, Any]:
+    """Soft delete deal by marking as deleted"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT id FROM deals WHERE id = %s", (deal_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return False, ["Deal not found"]
+    
+    try:
+        cursor.execute(
+            "UPDATE deals SET deleted_at = %s, updated_at = %s WHERE id = %s",
+            (now_iso(), now_iso(), deal_id)
+        )
+        conn.commit()
+        conn.close()
+        return True, {"id": deal_id, "deleted": True}
+    except Exception as e:
+        conn.close()
+        return False, [str(e)]
