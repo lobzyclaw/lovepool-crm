@@ -7,7 +7,7 @@
     <div class="page-header">
         <h1>{{ pipeline_id.title() }} Pipeline</h1>
         <div class="pipeline-stats">
-            <span>{{ columns|sum(attribute='count') }} deals</span>
+            <span>{{ columns|sum(attribute='count') }} opportunities</span>
             <span>${{ "{:,.0f}".format(columns|sum(attribute='total_value')) }} total</span>
         </div>
     </div>
@@ -29,17 +29,18 @@
             
             <div class="column-content">
                 {% for deal in column.deals %}
-                <a href="{{ url_for('deal_detail', deal_id=deal.id) }}" class="deal-card">
-                    <div class="deal-title">{{ deal._contact_name }}</div>
-                    <div class="deal-info">
-                        <span class="deal-value">${{ "{:,.0f}".format(deal.value) if deal.value else '—' }}</span>
-                        <span class="deal-prob">{{ deal.probability }}%</span>
+                <a href="{{ url_for('deal_detail', deal_id=deal.id) }}" class="opportunity-card">
+                    <div class="opp-contact-name">{{ deal.contact_name or 'Unknown' }}</div>
+                    <div class="opp-contact-email">{{ deal.email or 'No email' }}</div>
+                    <div class="opp-value">${{ "{:,.0f}".format(deal.value or 0) }}</div>
+                    <div class="opp-meta">
+                        <span class="opp-probability">{{ deal.probability or 0 }}% prob</span>
+                        {% if deal.expected_close_date %}
+                        <span class="opp-close-date">
+                            <i class="fas fa-calendar"></i> {{ deal.expected_close_date[:10] }}
+                        </span>
+                        {% endif %}
                     </div>
-                    {% if deal.expected_close_date %}
-                    <div class="deal-close">
-                        <i class="fas fa-calendar"></i> {{ deal.expected_close_date }}
-                    </div>
-                    {% endif %}
                 </a>
                 {% endfor %}
             </div>

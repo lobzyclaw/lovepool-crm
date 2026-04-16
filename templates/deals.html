@@ -2,12 +2,12 @@
 
 {% block content %}
 <div class="deals-page">
-    <h1>Deals</h1>
+    <h1>Opportunities</h1>
     
     <div class="filters">
         <form method="get" class="filter-form">
             <select name="pipeline" onchange="this.form.submit()">
-                <option value="">All Pipelines</option>
+                <option value="">All Business Lines</option>
                 {% for pipeline_id, stages in pipelines.items() %}
                 <option value="{{ pipeline_id }}" {% if request.args.get('pipeline') == pipeline_id %}selected{% endif %}>
                     {{ pipeline_id.title() }}
@@ -25,7 +25,7 @@
             </select>
         </form>
         
-        <a href="{{ url_for('deal_new') }}" class="btn btn-primary">+ New Deal</a>
+        <a href="{{ url_for('deal_new') }}" class="btn btn-primary">+ New Opportunity</a>
     </div>
     
     <div class="deals-list">
@@ -49,8 +49,8 @@
         </div>
         {% else %}
         <div class="empty-state">
-            <p>No deals found.</p>
-            <a href="{{ url_for('deal_new') }}" class="btn btn-primary">Create your first deal</a>
+            <p>No opportunities found.</p>
+            <a href="{{ url_for('deal_new') }}" class="btn btn-primary">Create your first opportunity</a>
         </div>
         {% endfor %}
     </div>

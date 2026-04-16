@@ -4,32 +4,105 @@
 <div class="dashboard">
     <h1>Dashboard</h1>
     
+    <!-- Top Row: Consolidated Stats (Clickable) -->
     <div class="stats-grid">
-        <div class="stat-card">
+        <a href="{{ url_for('contacts_list') }}" class="stat-card clickable">
             <div class="stat-icon"><i class="fas fa-users"></i></div>
             <div class="stat-value">{{ data.stats.contacts.total or 0 }}</div>
             <div class="stat-label">Total Contacts</div>
             <div class="stat-change">+{{ data.stats.contacts.new or 0 }} new (30d)</div>
-        </div>
+        </a>
         
-        <div class="stat-card">
+        <a href="{{ url_for('deals_list') }}" class="stat-card clickable">
             <div class="stat-icon"><i class="fas fa-handshake"></i></div>
             <div class="stat-value">{{ data.stats.deals.open or 0 }}</div>
-            <div class="stat-label">Open Deals</div>
-        </div>
+            <div class="stat-label">Open Opportunities</div>
+        </a>
         
-        <div class="stat-card">
+        <a href="{{ url_for('deals_list') }}" class="stat-card clickable">
             <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
             <div class="stat-value">${{ "{:,.0f}".format(data.stats.deals.pipeline_value or 0) }}</div>
             <div class="stat-label">Pipeline Value</div>
-        </div>
+        </a>
         
-        <div class="stat-card">
+        <a href="{{ url_for('sales_report') }}" class="stat-card clickable">
             <div class="stat-icon"><i class="fas fa-trophy"></i></div>
             <div class="stat-value">${{ "{:,.0f}".format(data.stats.deals.value_won or 0) }}</div>
             <div class="stat-label">Won (30d)</div>
+        </a>
+    </div>
+
+    <!-- Business Line Toggle -->
+    <div class="business-line-toggle">
+        <div class="toggle-label">View by Business Line:</div>
+        <div class="toggle-slider">
+            <button class="toggle-btn active" data-line="all">All</button>
+            <button class="toggle-btn" data-line="service">Service</button>
+            <button class="toggle-btn" data-line="repair">Repair</button>
+            <button class="toggle-btn" data-line="remodel">Remodel</button>
         </div>
     </div>
+
+    <!-- Business Line Stats (Toggleable) -->
+    <div class="stats-grid line-stats" id="lineStatsContainer">
+        <a href="{{ url_for('deals_list') }}" class="stat-card clickable line-stat" data-line="all">
+            <div class="stat-icon"><i class="fas fa-handshake"></i></div>
+            <div class="stat-value" id="openOpps">{{ data.stats.deals.open or 0 }}</div>
+            <div class="stat-label">Open Opportunities</div>
+        </a>
+        
+        <a href="{{ url_for('deals_list') }}" class="stat-card clickable line-stat" data-line="all">
+            <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+            <div class="stat-value" id="pipelineValue">${{ "{:,.0f}".format(data.stats.deals.pipeline_value or 0) }}</div>
+            <div class="stat-label">Pipeline Value</div>
+        </a>
+        
+        <a href="{{ url_for('sales_report') }}" class="stat-card clickable line-stat" data-line="all">
+            <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+            <div class="stat-value" id="wonValue">${{ "{:,.0f}".format(data.stats.deals.value_won or 0) }}</div>
+            <div class="stat-label">Won (30d)</div>
+        </a>
+        
+        <a href="{{ url_for('sales_report') }}" class="stat-card clickable line-stat" data-line="all">
+            <div class="stat-icon"><i class="fas fa-percentage"></i></div>
+            <div class="stat-value" id="winRate">{{ "%.0f"|format((data.stats.deals.won / (data.stats.deals.won + data.stats.deals.lost) * 100) if (data.stats.deals.won + data.stats.deals.lost) > 0 else 0) }}%</div>
+            <div class="stat-label">Win Rate</div>
+        </a>
+    </div>
+
+    <!-- Hidden data for JS -->
+    <script id="lineData" type="application/json">
+    {
+        "all": {
+            "open": {{ data.stats.deals.open or 0 }},
+            "pipeline_value": {{ data.stats.deals.pipeline_value or 0 }},
+            "value_won": {{ data.stats.deals.value_won or 0 }},
+            "won": {{ data.stats.deals.won or 0 }},
+            "lost": {{ data.stats.deals.lost or 0 }}
+        },
+        "service": {
+            "open": {{ data.stats.by_line.service.open if data.stats.by_line else 0 }},
+            "pipeline_value": {{ data.stats.by_line.service.pipeline_value if data.stats.by_line else 0 }},
+            "value_won": {{ data.stats.by_line.service.value_won if data.stats.by_line else 0 }},
+            "won": {{ data.stats.by_line.service.won if data.stats.by_line else 0 }},
+            "lost": {{ data.stats.by_line.service.lost if data.stats.by_line else 0 }}
+        },
+        "repair": {
+            "open": {{ data.stats.by_line.repair.open if data.stats.by_line else 0 }},
+            "pipeline_value": {{ data.stats.by_line.repair.pipeline_value if data.stats.by_line else 0 }},
+            "value_won": {{ data.stats.by_line.repair.value_won if data.stats.by_line else 0 }},
+            "won": {{ data.stats.by_line.repair.won if data.stats.by_line else 0 }},
+            "lost": {{ data.stats.by_line.repair.lost if data.stats.by_line else 0 }}
+        },
+        "remodel": {
+            "open": {{ data.stats.by_line.remodel.open if data.stats.by_line else 0 }},
+            "pipeline_value": {{ data.stats.by_line.remodel.pipeline_value if data.stats.by_line else 0 }},
+            "value_won": {{ data.stats.by_line.remodel.value_won if data.stats.by_line else 0 }},
+            "won": {{ data.stats.by_line.remodel.won if data.stats.by_line else 0 }},
+            "lost": {{ data.stats.by_line.remodel.lost if data.stats.by_line else 0 }}
+        }
+    }
+    </script>
 
     <div class="dashboard-grid">
         {% if data.stats.by_line %}
@@ -71,7 +144,7 @@
 
     {% if data.stale_deals %}
     <div class="dashboard-section alert">
-        <h2><i class="fas fa-exclamation-triangle"></i> Stale Deals (14+ days no activity)</h2>
+        <h2><i class="fas fa-exclamation-triangle"></i> Stale Opportunities (14+ days no activity)</h2>
         <div class="stale-deals">
             {% for deal in data.stale_deals %}
             <div class="stale-deal-card">
@@ -108,8 +181,35 @@
             <i class="fas fa-plus"></i> New Contact
         </a>
         <a href="{{ url_for('deal_new') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> New Deal
+            <i class="fas fa-plus"></i> New Opportunity
         </a>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtns = document.querySelectorAll('.toggle-btn');
+    const lineData = JSON.parse(document.getElementById('lineData').textContent);
+    
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Update active state
+            toggleBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            const line = this.dataset.line;
+            const data = lineData[line];
+            
+            // Update stats
+            document.getElementById('openOpps').textContent = data.open;
+            document.getElementById('pipelineValue').textContent = '$' + (data.pipeline_value || 0).toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('wonValue').textContent = '$' + (data.value_won || 0).toLocaleString('en-US', {maximumFractionDigits: 0});
+            
+            const totalClosed = (data.won || 0) + (data.lost || 0);
+            const winRate = totalClosed > 0 ? Math.round((data.won || 0) / totalClosed * 100) : 0;
+            document.getElementById('winRate').textContent = winRate + '%';
+        });
+    });
+});
+</script>
 {% endblock %}

@@ -8,7 +8,7 @@
         <div>
             <h1>{{ deal.title }}</h1>
             <p class="deal-meta">
-                Deal #{{ deal.id }} · Created {{ deal.created_at[:10] }} · 
+                Opportunity #{{ deal.id }} · Created {{ deal.created_at[:10] }} · 
                 <span class="badge" style="background: {% if deal.stage == 'won' %}#d1fae5{% elif deal.stage == 'lost' %}#fee2e2{% else %}#dbeafe{% endif %}">
                     {{ deal.stage.replace('_', ' ').title() }}
                 </span>
@@ -31,7 +31,7 @@
 
     <div class="dashboard-grid">
         <div class="dashboard-section">
-            <h2>Deal Info</h2>
+            <h2>Opportunity Info</h2>
             <div class="deal-info-grid">
                 <div class="info-item">
                     <label>Value</label>
