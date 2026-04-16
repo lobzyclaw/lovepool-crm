@@ -399,3 +399,15 @@ def deal_update_business_line(deal_id):
     conn.close()
     
     return redirect(url_for('deal_detail', deal_id=deal_id))
+
+# ============ MIGRATION ROUTE ============
+
+@app.route('/admin/migrate-stages', methods=['POST'])
+def migrate_stages():
+    """Run migration to fix pipeline stages"""
+    from migrate_stages import migrate
+    try:
+        migrate()
+        return jsonify({'success': True, 'message': 'Migration complete'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
