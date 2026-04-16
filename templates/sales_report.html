@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="sales-report">
+    <h1>Sales Report</h1>
+    
+    <div class="report-filters">
+        <form method="get" class="filter-form">
+            <select name="days" onchange="this.form.submit()">
+                <option value="7" {% if days == 7 %}selected{% endif %}>Last 7 days</option>
+                <option value="30" {% if days == 30 %}selected{% endif %}>Last 30 days</option>
+                <option value="90" {% if days == 90 %}selected{% endif %}>Last 90 days</option>
+            </select>
+            
+            <select name="user_id" onchange="this.form.submit()">
+                <option value="">All Reps</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if selected_user == user.id %}selected{% endif %}>
+                    {{ user.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    
+    <div class="report-summary">
+        <div class="summary-card">
+            <h3>Deals Won</h3>
+            <div class="big-number">{{ report.summary.deals_won }}</div>
+        </div>
+        
+        <div class="summary-card">
+            <h3>Total Value</h3>
+            <div class="big-number">${{ "{:,.0f}".format(report.summary.total_value or 0) }}</div>
+        </div>
+        
+        <div class="summary-card">
+            <h3>Avg Deal Size</h3>
+            <div class="big-number">${{ "{:,.0f}".format(report.summary.avg_deal_size or 0) }}</div>
+        </div>
+        
+        <div class="summary-card">
+            <h3>Win Rate</h3>
+            <div class="big-number">{{ "%.1f"|format(report.summary.win_rate or 0) }}%</div>
+        </div>
+    </div>
+    
+    {% if report.by_line %}
+    <div class="by-line-section">
+        <h2>By Business Line</h2>
+        <div class="line-stats">
+            {% for line, stats in report.by_line.items() %}
+            <div class="line-card">
+                <h3>{{ line.title() }}</h3>
+                <div class="stats">
+                    <span class="stat">{{ stats.open or 0 }} open</span>
+                    <span class="stat">{{ stats.won or 0 }} won</span>
+                    <span class="stat">{{ stats.lost or 0 }} lost</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="deals-won-section">
+        <h2>Deals Won ({{ report.deals|length }})</h2>
+        
+        {% if report.deals %}
+        <div class="deals-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Deal</th>
+                        <th>Contact</th>
+                        <th>Business Line</th>
+                        <th>Value</th>
+                        <th>Closed Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for deal in report.deals %}
+                    <tr>
+                        <td><a href="{{ url_for('deal_detail', deal_id=deal.id) }}">{{ deal.title }}</a></td>
+                        <td>{{ deal.contact_name or 'Unknown' }}</td>
+                        <td>{{ deal.business_line.title() }}</td>
+                        <td>${{ "{:,.0f}".format(deal.value or 0) }}</td>
+                        <td>{{ deal.actual_close_date[:10] if deal.actual_close_date else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty">No deals won in this period.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

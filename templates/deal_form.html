@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="deal-form-page">
+    <h1>{% if contact_id %}Create Deal for Contact{% else %}Create New Deal{% endif %}</h1>
+    
+    {% if error %}
+    <div class="alert alert-error">
+        {% for e in error %}
+        <p>{{ e }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <form method="post" class="deal-form">
+        {% if contact_id %}
+        <input type="hidden" name="contact_id" value="{{ contact_id }}">
+        {% else %}
+        <div class="form-group">
+            <label for="contact_id">Contact *</label>
+            <select name="contact_id" id="contact_id" required>
+                <option value="">Select a contact...</option>
+                <!-- This would be populated with contacts -->
+            </select>
+        </div>
+        {% endif %}
+        
+        <div class="form-group">
+            <label for="business_line">Business Line *</label>
+            <select name="business_line" id="business_line" required>
+                <option value="">Select...</option>
+                {% for pipeline_id, stages in pipelines.items() %}
+                <option value="{{ pipeline_id }}" {% if data and data.business_line == pipeline_id %}selected{% endif %}>
+                    {{ pipeline_id.title() }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="title">Deal Title *</label>
+            <input type="text" name="title" id="title" value="{{ data.title or '' }}" 
+                   placeholder="e.g., Weekly Pool Service - Paradise Valley" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="value">Deal Value ($)</label>
+            <input type="number" name="value" id="value" value="{{ data.value or '' }}" 
+                   placeholder="4200" step="0.01">
+        </div>
+        
+        <div class="form-group">
+            <label for="expected_close_date">Expected Close Date</label>
+            <input type="date" name="expected_close_date" id="expected_close_date" 
+                   value="{{ data.expected_close_date or '' }}">
+        </div>
+        
+        <div class="form-group">
+            <label for="assigned_to">Assigned To</label>
+            <select name="assigned_to" id="assigned_to">
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if (data and data.assigned_to == user.id) or (not data and user.id == 'usr_rep_1') %}selected{% endif %}>
+                    {{ user.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea name="notes" id="notes" rows="4" placeholder="Any additional details...">{{ data.notes or '' }}</textarea>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Deal</button>
+            <a href="{{ url_for('deals_list') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

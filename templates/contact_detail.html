@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="contact-detail">
+    <div class="contact-header">
+        <h1>{{ contact.first_name }} {{ contact.last_name }}</h1>
+        <div class="contact-actions">
+            <a href="{{ url_for('deal_new', contact_id=contact.id) }}" class="btn btn-primary">+ New Deal</a>
+        </div>
+    </div>
+    
+    <div class="contact-grid">
+        <div class="contact-info">
+            <h2>Contact Information</h2>
+            
+            <div class="info-group">
+                <label>Phone</label>
+                <p>{{ contact.phone or 'N/A' }}</p>
+            </div>
+            
+            <div class="info-group">
+                <label>Email</label>
+                <p>{{ contact.email or 'N/A' }}</p>
+            </div>
+            
+            <div class="info-group">
+                <label>Company</label>
+                <p>{{ contact.company_name or 'N/A' }}</p>
+            </div>
+            
+            <div class="info-group">
+                <label>Address</label>
+                <p>
+                    {% if contact.address.street %}{{ contact.address.street }}<br>{% endif %}
+                    {% if contact.address.city %}{{ contact.address.city }}, {% endif %}
+                    {% if contact.address.state %}{{ contact.address.state }} {% endif %}
+                    {% if contact.address.zip %}{{ contact.address.zip }}{% endif %}
+                    {% if not contact.address.street and not contact.address.city %}N/A{% endif %}
+                </p>
+            </div>
+            
+            <div class="info-group">
+                <label>Source</label>
+                <p>{{ contact.source.replace('_', ' ').title() }}</p>
+            </div>
+            
+            <div class="info-group">
+                <label>Assigned To</label>
+                <p>{{ contact.assigned_to }}</p>
+            </div>
+            
+            <div class="info-group">
+                <label>Notes</label>
+                <p>{{ contact.notes or 'No notes' }}</p>
+            </div>
+        </div>
+        
+        <div class="contact-deals">
+            <h2>Deals ({{ deals|length }})</h2>
+            
+            {% if deals %}
+            <div class="deals-list">
+                {% for deal in deals %}
+                <div class="deal-card">
+                    <a href="{{ url_for('deal_detail', deal_id=deal.id) }}">
+                        <h4>{{ deal.title }}</h4>
+                        <span class="stage-badge {{ deal.stage }}">{{ deal.stage.replace('_', ' ').title() }}</span>
+                        <p>${{ "{:,.0f}".format(deal.value or 0) }} - {{ deal.business_line.title() }}</p>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty">No deals yet.</p>
+            <a href="{{ url_for('deal_new', contact_id=contact.id) }}" class="btn btn-primary">Create Deal</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if activities %}
+    <div class="contact-activities">
+        <h2>Activity History</h2>
+        <div class="activities-list">
+            {% for activity in activities %}
+            <div class="activity-item">
+                <span class="activity-type">{{ activity.type.replace('_', ' ').title() }}</span>
+                <span class="activity-date">{{ activity.performed_at[:16] if activity.performed_at else 'N/A' }}</span>
+                <p>{{ activity.notes or '' }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
