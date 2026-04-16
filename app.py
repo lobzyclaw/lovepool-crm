@@ -7,9 +7,12 @@ Flask-based web UI for the CRM
 import sys
 import os
 
-# Fix path for both local and Railway
+# Fix imports for Railway + Docker
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+
+# Debug (remove after fix)
+print("Python path:", sys.path)
+print("Files in /app:", os.listdir('/app') if os.path.exists('/app') else 'N/A')
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from flask_cors import CORS
