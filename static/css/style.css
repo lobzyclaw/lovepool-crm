@@ -809,3 +809,24 @@ body {
     color: var(--gray-600);
     font-size: 0.875rem;
 }
+
+/* Ensure line stats cards match top card height */
+#lineStatsContainer .stat-card {
+    padding: 1.5rem;
+    min-height: auto;
+}
+
+#lineStatsContainer .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+}
+
+#lineStatsContainer .stat-value {
+    font-size: 2rem;
+    margin-top: 0.5rem;
+}
+
+#lineStatsContainer .stat-label {
+    font-size: 0.875rem;
+}
