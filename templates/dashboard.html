@@ -32,6 +32,7 @@
     </div>
 
     <div class="dashboard-grid">
+        {% if data.stats.by_line %}
         <div class="dashboard-section">
             <h2>By Business Line</h2>
             <div class="business-lines">
@@ -47,6 +48,7 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
 
         <div class="dashboard-section">
             <h2>Pipeline Quick Links</h2>
