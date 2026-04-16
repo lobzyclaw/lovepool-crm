@@ -219,7 +219,7 @@ def init_db():
     # Insert default users
     try:
         cursor.execute("SELECT COUNT(*) FROM users")
-        if cursor.fetchone()[0] == 0:
+        if list(cursor.fetchone().values())[0] == 0:
             default_users = [
                 ("usr_rep_1", "Rep 1", None, "sales", 1),
                 ("usr_rep_2", "Rep 2", None, "sales", 1),
@@ -236,7 +236,7 @@ def init_db():
     # Insert pipeline stages
     try:
         cursor.execute("SELECT COUNT(*) FROM pipeline_stages")
-        if cursor.fetchone()[0] == 0:
+        if list(cursor.fetchone().values())[0] == 0:
             stages = [
                 ("service", "new", "New Lead", 10, 1),
                 ("service", "qualified", "Qualified", 30, 2),
@@ -408,7 +408,7 @@ def db_contact_search(query: str, limit: int = 20, offset: int = 0) -> Tuple[int
         WHERE first_name LIKE %s OR last_name LIKE %s OR phone LIKE %s 
            OR email LIKE %s OR company_name LIKE %s
     """, (search, search, search, search, search))
-    total = cursor.fetchone()[0]
+    total = list(cursor.fetchone().values())[0]
     
     cursor.execute("""
         SELECT * FROM contacts 
@@ -670,7 +670,7 @@ def db_deal_list(pipeline: Optional[str] = None, stage: Optional[str] = None,
     where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
     
     cursor.execute(f"SELECT COUNT(*) FROM deals d WHERE {where_sql}", params)
-    total = cursor.fetchone()[0]
+    total = list(cursor.fetchone().values())[0]
     
     cursor.execute(f"""
         SELECT d.*, c.first_name, c.last_name, c.company_name
@@ -835,7 +835,7 @@ def db_activity_list(contact_id: Optional[str] = None, deal_id: Optional[str] = 
     where_sql = " AND ".join(where_clauses) if where_clauses else "1=1"
     
     cursor.execute(f"SELECT COUNT(*) FROM activities WHERE {where_sql}", params)
-    total = cursor.fetchone()[0]
+    total = list(cursor.fetchone().values())[0]
     
     cursor.execute(f"""
         SELECT * FROM activities 
@@ -859,31 +859,31 @@ def db_get_stats(days: int = 30) -> Dict:
     
     # Contact stats
     cursor.execute("SELECT COUNT(*) FROM contacts")
-    total_contacts = cursor.fetchone()[0]
+    total_contacts = list(cursor.fetchone().values())[0]
     cursor.execute("SELECT COUNT(*) FROM contacts WHERE created_at > %s", (cutoff,))
-    new_contacts = cursor.fetchone()[0]
+    new_contacts = list(cursor.fetchone().values())[0]
     
     # Deal stats
     cursor.execute("SELECT COUNT(*) FROM deals WHERE stage NOT IN ('won', 'lost')")
-    open_deals = cursor.fetchone()[0]
+    open_deals = list(cursor.fetchone().values())[0]
     cursor.execute("SELECT COUNT(*) FROM deals WHERE stage = 'won' AND actual_close_date > %s", (cutoff,))
-    won_deals = cursor.fetchone()[0]
+    won_deals = list(cursor.fetchone().values())[0]
     cursor.execute("SELECT COUNT(*) FROM deals WHERE stage = 'lost' AND actual_close_date > %s", (cutoff,))
-    lost_deals = cursor.fetchone()[0]
+    lost_deals = list(cursor.fetchone().values())[0]
     cursor.execute("SELECT COALESCE(SUM(value), 0) FROM deals WHERE stage NOT IN ('won', 'lost')")
-    pipeline_value = cursor.fetchone()[0]
+    pipeline_value = list(cursor.fetchone().values())[0]
     cursor.execute("SELECT COALESCE(SUM(value), 0) FROM deals WHERE stage = 'won' AND actual_close_date > %s", (cutoff,))
-    won_value = cursor.fetchone()[0]
+    won_value = list(cursor.fetchone().values())[0]
     
     # By line
     by_line = {}
     for line in ['service', 'repair', 'remodel']:
         cursor.execute("SELECT COUNT(*) FROM deals WHERE business_line = %s AND stage NOT IN ('won', 'lost')", (line,))
-        open_count = cursor.fetchone()[0]
+        open_count = list(cursor.fetchone().values())[0]
         cursor.execute("SELECT COUNT(*) FROM deals WHERE business_line = %s AND stage = 'won'", (line,))
-        won_count = cursor.fetchone()[0]
+        won_count = list(cursor.fetchone().values())[0]
         cursor.execute("SELECT COUNT(*) FROM deals WHERE business_line = %s AND stage = 'lost'", (line,))
-        lost_count = cursor.fetchone()[0]
+        lost_count = list(cursor.fetchone().values())[0]
         by_line[line] = {"open": open_count, "won": won_count, "lost": lost_count}
     
     conn.close()
