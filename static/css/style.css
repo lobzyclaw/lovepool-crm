@@ -52,6 +52,7 @@ body {
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--primary);
+    text-decoration: none;
 }
 
 .nav-brand i {
@@ -79,6 +80,7 @@ body {
 .nav-menu a.active {
     background: var(--gray-100);
     color: var(--primary);
+    text-decoration: none;
 }
 
 /* Main Content */
@@ -163,6 +165,7 @@ body {
     align-items: center;
     justify-content: center;
     color: var(--primary);
+    text-decoration: none;
     font-size: 1.25rem;
 }
 
@@ -431,6 +434,7 @@ body {
 .data-table a {
     color: var(--primary);
     text-decoration: none;
+    text-decoration: none;
 }
 
 /* Forms */
@@ -488,6 +492,7 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary);
+    text-decoration: none;
 }
 
 .form-actions {
