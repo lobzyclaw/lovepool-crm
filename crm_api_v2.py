@@ -9,7 +9,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from crm_db import (
-    init_db, db_contact_create, db_contact_get, db_contact_search,
+    init_db, db_contact_create, db_contact_get, db_contact_search, db_contact_update,
     db_deal_create, db_deal_get, db_deal_update_stage, db_deal_close, db_deal_list,
     db_activity_create, db_activity_list,
     db_get_stats, db_get_stale_deals, get_db, normalize_phone, escape_html, USE_POSTGRES
@@ -19,15 +19,6 @@ import json
 
 # Initialize DB on import
 init_db()
-
-def _format_query(sql: str) -> str:
-    """Convert SQLite ? placeholders to PostgreSQL %s if needed"""
-    if USE_POSTGRES:
-        # Replace ? with %s for PostgreSQL
-        # Need to be careful not to replace ? in string literals
-        # Simple approach: replace all ? with %s
-        return sql.replace('?', '%s')
-    return sql
 
 # ============ CONTACT API ============
 
@@ -115,8 +106,8 @@ def api_deal_get(deal_id: str) -> Dict:
     
     # Get available next stages
     conn = get_db()
-    cursor = conn.execute(_format_query(
-        "SELECT stage, stage_name, probability FROM pipeline_stages WHERE pipeline_id = ? ORDER BY stage_order"),
+    cursor = conn.execute(
+        "SELECT stage, stage_name, probability FROM pipeline_stages WHERE pipeline_id = %s ORDER BY stage_order",
         (deal["pipeline_id"],)
     )
     stages = [(r["stage"], r["stage_name"], r["probability"]) for r in cursor.fetchall()]
@@ -142,8 +133,8 @@ def api_deal_get(deal_id: str) -> Dict:
     
     # Get stage history
     conn = get_db()
-    cursor = conn.execute(_format_query(
-        "SELECT timestamp, \"user\", type, old_value, new_value FROM deal_history WHERE deal_id = ? ORDER BY timestamp DESC"),
+    cursor = conn.execute(
+        "SELECT timestamp, \"user\", type, old_value, new_value FROM deal_history WHERE deal_id = %s ORDER BY timestamp DESC",
         (deal_id,)
     )
     result["history"] = [{
@@ -199,20 +190,20 @@ def api_pipeline_view(pipeline_id: str) -> Dict:
     conn = get_db()
     
     # Get stages
-    cursor = conn.execute(_format_query(
-        "SELECT stage, stage_name, probability FROM pipeline_stages WHERE pipeline_id = %s ORDER BY stage_order"),
+    cursor = conn.execute(
+        "SELECT stage, stage_name, probability FROM pipeline_stages WHERE pipeline_id = %s ORDER BY stage_order",
         (pipeline_id,)
     )
     stages = [{"id": r["stage"], "name": r["stage_name"], "probability": r["probability"]} for r in cursor.fetchall()]
     
     # Get deals for this pipeline
-    cursor = conn.execute(_format_query("""
+    cursor = conn.execute("""
         SELECT d.*, c.first_name, c.last_name, c.company_name
         FROM deals d
         JOIN contacts c ON d.contact_id = c.id
         WHERE d.pipeline_id = %s
         ORDER BY d.updated_at DESC
-    """), (pipeline_id,))
+    """, (pipeline_id,))
     deals = [dict(r) for r in cursor.fetchall()]
     conn.close()
     
@@ -247,20 +238,24 @@ def api_report_sales(days: int = 30, user_id: Optional[str] = None) -> Dict:
     
     # Get won deals
     conn = get_db()
-    where_clause = "stage = 'won' AND actual_close_date > (NOW() - INTERVAL '%s days')" if USE_POSTGRES else "stage = 'won' AND actual_close_date > date('now', '-%s days')"
-    params = (days,)
     
     if user_id:
-        where_clause += " AND assigned_to = %s"
-        params = (days, user_id)
-    
-    cursor = conn.execute(_format_query(f"""
-        SELECT d.*, c.first_name, c.last_name
-        FROM deals d
-        JOIN contacts c ON d.contact_id = c.id
-        WHERE {where_clause}
-        ORDER BY d.actual_close_date DESC
-    """), params)
+        cursor = conn.execute("""
+            SELECT d.*, c.first_name, c.last_name
+            FROM deals d
+            JOIN contacts c ON d.contact_id = c.id
+            WHERE d.stage = 'won' AND d.assigned_to = %s
+            ORDER BY d.actual_close_date DESC
+        """, (user_id,))
+        params = (user_id,)
+    else:
+        cursor = conn.execute("""
+            SELECT d.*, c.first_name, c.last_name
+            FROM deals d
+            JOIN contacts c ON d.contact_id = c.id
+            WHERE d.stage = 'won'
+            ORDER BY d.actual_close_date DESC
+        """)
     
     won_deals = [dict(r) for r in cursor.fetchall()]
     conn.close()
@@ -271,11 +266,9 @@ def api_report_sales(days: int = 30, user_id: Optional[str] = None) -> Dict:
     
     # Win rate
     conn = get_db()
-    cursor = conn.execute(_format_query("""
-        SELECT COUNT(*) FROM deals WHERE stage IN ('won', 'lost') AND actual_close_date > (NOW() - INTERVAL '%s days')
-    """ if USE_POSTGRES else """
-        SELECT COUNT(*) FROM deals WHERE stage IN ('won', 'lost') AND actual_close_date > date('now', '-%s days')
-    """), (days,))
+    cursor = conn.execute("""
+        SELECT COUNT(*) FROM deals WHERE stage IN ('won', 'lost')
+    """)
     total_closed = cursor.fetchone()[0]
     conn.close()
     
