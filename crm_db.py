@@ -13,19 +13,12 @@ import re
 import html
 import uuid
 
-
 # Railway database path fix
 import os
 from pathlib import Path
 
-if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('PORT'):
-    CRM_DIR = Path("/app/data")
-else:
-    CRM_DIR = Path(os.environ.get("DATA_DIR", "/Users/lobzy/.openclaw/workspace/data/crm"))
-
-CRM_DIR.mkdir(parents=True, exist_ok=True)
-DB_PATH = CRM_DIR / "crm.db"
 CRM_DIR = Path(os.environ.get("DATA_DIR", "/Users/lobzy/.openclaw/workspace/data/crm"))
+CRM_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = CRM_DIR / "crm.db"
 
 def get_db() -> sqlite3.Connection:
