@@ -23,17 +23,21 @@
         <div class="kanban-column">
             <div class="column-header">
                 <h3>{{ column.stage.name }}</h3>
-                <span class="count">{{ column.count }}</span>
-                <span class="value">${{ "{:,.0f}".format(column.total_value) }}</span>
+                <div class="column-stats">
+                    <span class="count">{{ column.count }}</span>
+                    <span class="value">${{ "{:,.0f}".format(column.total_value) }}</span>
+                </div>
             </div>
             
             <div class="column-content">
                 {% for deal in column.deals %}
                 <a href="{{ url_for('deal_detail', deal_id=deal.id) }}" class="opportunity-card">
-                    <div class="opp-contact-name">{{ deal.contact_name or 'Unknown' }}</div>
-                    <div class="opp-contact-email">{{ deal.email or 'No email' }}</div>
+                    <div class="opp-header">
+                        <span class="opp-contact-name">{{ deal.contact_name or 'Unknown Contact' }}</span>
+                    </div>
+                    <div class="opp-contact-email">{{ deal.email or deal.phone or 'No contact info' }}</div>
                     <div class="opp-value">${{ "{:,.0f}".format(deal.value or 0) }}</div>
-                    <div class="opp-meta">
+                    <div class="opp-footer">
                         <span class="opp-probability">{{ deal.probability or 0 }}% prob</span>
                         {% if deal.expected_close_date %}
                         <span class="opp-close-date">

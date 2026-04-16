@@ -36,6 +36,16 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- Floating Action Buttons - Always Visible -->
+    <div class="floating-actions">
+        <a href="{{ url_for('contact_new') }}" class="btn btn-primary" title="New Contact">
+            <i class="fas fa-user-plus"></i>
+        </a>
+        <a href="{{ url_for('deal_new') }}" class="btn btn-primary" title="New Opportunity">
+            <i class="fas fa-handshake"></i>
+        </a>
+    </div>
+
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
