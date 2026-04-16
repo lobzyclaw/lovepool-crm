@@ -175,6 +175,7 @@ def deal_new():
             else:
                 ref = api_reference_data()
                 return render_template('deal_form.html',
+                         data={},
                                      error=result.get('errors', ['Unknown error']),
                                      data=request.form,
                                      pipelines=ref.get('pipelines', {}),
@@ -184,6 +185,7 @@ def deal_new():
         except Exception as e:
             ref = api_reference_data()
             return render_template('deal_form.html',
+                         data={},
                                  error=[str(e)],
                                  data=request.form,
                                  pipelines=ref.get('pipelines', {}),
@@ -193,6 +195,7 @@ def deal_new():
     
     ref = api_reference_data()
     return render_template('deal_form.html',
+                         data={},
                          pipelines=ref.get('pipelines', {}),
                          users=ref.get('users', []),
                          contacts=contacts,
