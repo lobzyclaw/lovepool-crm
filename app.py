@@ -357,7 +357,6 @@ def sync_callrail():
     return jsonify(result)
 
 @app.route('/admin/sync-callrail/status')
-@login_required
 def sync_callrail_status():
     """Check if CallRail API is configured"""
     import os
